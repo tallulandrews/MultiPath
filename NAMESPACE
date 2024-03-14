@@ -1,6 +1,3 @@
-exportPattern("M3Drop*")
-exportPattern("NBumi*")
-exportPattern("bg__*")
 import(RColorBrewer)
 import(gplots)
 import(Matrix)
