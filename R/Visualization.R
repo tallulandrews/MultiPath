@@ -1,4 +1,4 @@
-plot_enrichments_heatmap <- function(list_of_rich, ntop=5, colors=colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=NULL, stars.col="black", remove.prefix=FALSE, prefix.delim="_", log.scale=FALSE, bounds=NULL, cluster_rows=TRUE, cluster_cols=FALSE, plot.result=TRUE) {
+plot_enrichments_heatmap <- function(list_of_rich, ntop=5, colors=colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=NULL, stars.col="black", remove.prefix=FALSE, prefix.delim="_", log.scale=FALSE, bounds=NULL, cluster_rows=TRUE, cluster_cols=FALSE, plot.result=TRUE, both.dir=FALSE) {
 	# Collect pathways
 	all_pathways <- c();
 	#pathway_origin <- c();
@@ -6,8 +6,16 @@ plot_enrichments_heatmap <- function(list_of_rich, ntop=5, colors=colorRampPalet
 		paths <- list_of_rich[[i]]$results
 		if (nrow(paths) == 0) {next;}
 		paths <- paths[order(paths$FDR),]
-		n <- min(nrow(paths), ntop)
-		all_pathways <- c(all_pathways, paths$pathway[1:n])
+		if (both.dir) {
+			n_up <- min(nrow(paths[paths[,3] > 0,]), ntop)
+			all_pathways <- c(all_pathways, paths[paths[,3] > 0,"pathway"][1:n_up])
+			n_dn <- min(nrow(paths[paths[,3] < 0,]), ntop)
+			all_pathways <- c(all_pathways, paths[paths[,3] < 0,"pathway"][1:n_dn])
+
+		} else {
+			n <- min(nrow(paths), ntop)
+			all_pathways <- c(all_pathways, paths$pathway[1:n])
+		}
 		#pathway_origin <- c(pathway_origin, rep(i, n))
 	}
 	# remove duplicates

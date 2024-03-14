@@ -1,3 +1,14 @@
+#' rowMeans wrapper
+#'
+#' @description
+#' A wrapper for Matrix::rowMeans that automatically checks if the input is a single column if so it returns just that column.
+#' 
+#' @param x a matrix or Matrix or a vector.
+#' @return the row means of the matrix or the original vector if supplied with a vector
+#' @examples
+#' example_data <- generate_test_cellcounts()
+#' my_rowMeans(example_data$counts)
+#' my_rowMeans(c(1,2,3,4,5,6,7,8,10))
 my_rowMeans <- function(x) {
         if (!is.null(ncol(x))) {
                 if (ncol(x) > 1) {
@@ -6,6 +17,17 @@ my_rowMeans <- function(x) {
         }
         return(x);
 }
+#' rowSums wrapper
+#'
+#' @description
+#' A wrapper for Matrix::rowSums that automatically checks if the input is a single column if so it returns just that column.
+#' 
+#' @param x a matrix or Matrix or a vector.
+#' @return the row sums of the matrix or the original vector if supplied with a vector
+#' @examples
+#' example_data <- generate_test_cellcounts()
+#' my_rowSums(example_data$counts)
+#' my_rowSums(c(1,2,3,4,5,6,7,8,10))
 my_rowSums <- function(x) {
         if (!is.null(ncol(x))) {
                 if (ncol(x) > 1) {
@@ -14,6 +36,17 @@ my_rowSums <- function(x) {
         }
         return(x);
 }
+#' colMeans wrapper
+#'
+#' @description
+#' A wrapper for Matrix::colMeans that automatically checks if the input is a single row if so it returns just that row.
+#' 
+#' @param x a matrix or Matrix or a vector.
+#' @return the column means of the matrix or the original vector if supplied with a vector
+#' @examples
+#' example_data <- generate_test_cellcounts()
+#' my_colMeans(example_data$counts)
+#' my_colMeans(c(1,2,3,4,5,6,7,8,10))
 my_colMeans <- function(x) {
         if (!is.null(nrow(x))) {
                 if (nrow(x) > 1) {
@@ -22,6 +55,17 @@ my_colMeans <- function(x) {
         }
         return(x);
 }
+#' colSums wrapper
+#'
+#' @description
+#' A wrapper for Matrix::colSums that automatically checks if the input is a single row if so it returns just that row.
+#' 
+#' @param x a matrix or Matrix or a vector.
+#' @return the column means of the matrix or the original vector if supplied with a vector
+#' @examples
+#' example_data <- generate_test_cellcounts()
+#' my_colSums(example_data$counts)
+#' my_colSums(c(1,2,3,4,5,6,7,8,10))
 my_colSums <- function(x) {
         if (!is.null(nrow(x))) {
                 if (nrow(x) > 1) {
@@ -31,6 +75,21 @@ my_colSums <- function(x) {
         return(x);
 }
 
+#' Group Row Means
+#'
+#' @description
+#' Optimized code for calculating the row means or row sums of a matrix after grouping the columns by a vector of groups.
+#' 
+#' @details
+#' Uses my_rowSums and my_rowMeans to calculate a matrix of row means or row sums for each group devinfed in group_labs. Note normalized expression should be averaged while raw counts should be summed.
+#' @param MAT a matrix or sparse matrix of values to be aggregated
+#' @param group_labs a vector of group labels equal in length to the number of columsn of MAT.
+#' @param type whether to calculate the row means or row sums
+#' @return a matrix of the row means for each group.
+#' @examples
+#' example_data <- generate_test_cellcounts()
+#' avg_celltype_counts <- group_rowmeans(example_data$counts,example_data$celltypes)
+#' avg_donor_counts <- group_rowmeans(example_data$counts,example_data$donors)
 group_rowmeans <- function(MAT, group_labs, type=c("mean","sum")) {
         d <- split(seq(ncol(MAT)), group_labs);
 	if (type[1] == "mean") {
@@ -40,6 +99,21 @@ group_rowmeans <- function(MAT, group_labs, type=c("mean","sum")) {
 	} 
         return(mus);
 }
+#' Group Column Means
+#'
+#' @description
+#' Optimized code for calculating the column means or column sums of a matrix after grouping the columns by a vector of groups.
+#' 
+#' @details
+#' Uses my_colSums and my_colMeans to calculate a matrix of column means or column sums for each group devinfed in group_labs. Note normalized expression should be averaged while raw counts should be summed.
+#' @param MAT a matrix or sparse matrix of values to be aggregated
+#' @param group_labs a vector of group labels equal in length to the number of columsn of MAT.
+#' @param type whether to calculate the column means or column sums
+#' @return a matrix of the column means for each group.
+#' @examples
+#' example_data <- generate_test_cellcounts()
+#' avg_celltype_counts <- group_colmeans(t(example_data$counts),example_data$celltypes)
+#' avg_donor_counts <- group_colmeans(t(example_data$counts),example_data$donors)
 group_colmeans <- function(MAT, group_labs, type=c("mean", "sum")) {
         d <- split(seq(nrow(MAT)), group_labs);
 	if (type[1] == "mean") {
@@ -51,6 +125,20 @@ group_colmeans <- function(MAT, group_labs, type=c("mean", "sum")) {
 }
 
 
+#' Trim Pseudobulk Samples
+#'
+#' @description
+#' Removes sample x cell-type combinations where there are too few cells to obtain reliable pseudobulk estimates.
+#' 
+#' @details
+#' Any combination of cell-type x individual (or sample) that has fewer than `nmin` cells are identified for removal. This is called by get_pseudobulks.
+#' @param clusters a vector of cell-type names or cluster IDs.
+#' @param individual a vector of individual or sample IDs.
+#' @param nmin the minimum number of cells required for a reliable pseudobulk estimate.
+#' @return a vector of cluster-individual pairs that should be excluded
+#' @examples
+#' example_data <- generate_test_cellcounts()
+#' trim_for_pseudobulks(example_data$celltypes, example_data$donors) # all of celltype1 should be identified for removal.
 trim_for_pseudobulks <- function(clusters, individual, nmin=10) {
         tmp <- table(clusters, individual)
         toofew <- which(tmp < nmin, arr.ind=TRUE)
@@ -59,13 +147,31 @@ trim_for_pseudobulks <- function(clusters, individual, nmin=10) {
         return(exclude)
 }
 
-# Table of total expression of cells from each donor in each cluster
-#  - for edgeR
-# Calculate pseudobulks for each cluster in each individual for scRNAseq experiments with multiple replicates.
-# For edgeR or DESeq2 we recommend using method="sum" and the raw counts as the matrix.
-# if using a standard glm or MAST we recommend using method="mean" on the lognormalized data
-# trim provides the option to remove groups where there are insufficient samples to get a reliable estimate of the mean (i.e. fewer than trim cells). Set trim <0 to turn off trimming.
-# refactor determines whether clusters & donors are refactored. Refactoring will change the order of the groups in the output but will avoid errors where some clusters contain 0 cells. It is highly recommended to refactor if using trim.
+#' Generate Pseudobulks
+#'
+#' @description
+#' Calculates pseudobulk expression for each celltype x sample pair.
+#' 
+#' @details
+#' Calculates pseudobulk expression for performing differential expression (DE). If using a negative-binomial model based DE method such as edgeR or DESeq2 the "sum" of the raw umi counts should be used. If using a Gaussian (e.g. MAST) or non-parametric DE method then the "mean" of normalized expression should be calculated.
+#' To avoid noise from samples where only a small number of cells of a particular cell-type are found, it automatically filters out cases where there are fewer than `trim` cells of a particular cell-type in a particular sample.
+#' Note: to avoid issues retreiving sample & cell-type IDs from the output column names, all underscores in the original clusters and donor ids are replaced with a dash("-").
+#' 
+#' @param mat a matrix of umi counts or normalized expression for each cell, supports sparse matrices
+#' @param clusters a vector of cluster or cell-type labels for each cell.
+#' @param donors a vector of donor or sample labels for each cell.
+#' @param method whether to add up or average the expression in each cell-type x sample group of cell.
+#' @param trim cell-type x sample groups with fewer than this many cells will not be included in the pseudobulk matrix
+#' @param refactor whether to factor the clusters & donors vectors - recommended if trimming.
+#' @return  A matrix of pseudobulk expression with column names in the format: [cluster]_[donor].
+#' @examples
+#'   example_data <- generate_test_cellcounts()
+#'   test1 <- get_pseudobulk(tmp$counts, clusters=tmp$celltypes, donors=tmp$donors)
+#'   dim(test1) # should be 20 x 6
+#'   test2 <- get_pseudobulk(tmp$counts, clusters=tmp$celltypes, donors=tmp$donors, trim=0)
+#'   dim(test2) # should be 20 x 9
+#'   sample <- sapply(strsplit(colnames(test2), "_"), function(x){x[[2]]})
+#'   cell_type <- sapply(strsplit(colnames(test2), "_"), function(x){x[[1]]})
 get_pseudobulk <- function(mat, clusters, donors, method=c("sum", "mean"), trim=10, refactor=TRUE) {
 	#avoid naming issues - we use underscores to sepearate cluster vs donor in pseudobulk column names
 	clusters <- sub("_", "-", clusters)
@@ -85,9 +191,8 @@ get_pseudobulk <- function(mat, clusters, donors, method=c("sum", "mean"), trim=
 
 	# Subset "mat" to each pair of donors & clusters and add up the umi counts for all the cells
         c <- split(seq(ncol(mat)), clusters);
-        donor_freqs <- table(donors)/length(donors)
         # expression per donor in this cluster
-        clust_expr <- sapply(c, function(clust) {
+        clust_expr <- lapply(c, function(clust) {
                 d_expr <- group_rowmeans(mat[,clust], donors[clust], type=method[1]);
                 if(is.null(dim(d_expr))) {
                         l <- sapply(d_expr, length)
@@ -101,8 +206,9 @@ get_pseudobulk <- function(mat, clusters, donors, method=c("sum", "mean"), trim=
                 return(d_expr);
         })
         out <- clust_expr[[1]];
+	c_names <- colnames(out)
         for (i in 2:length(clust_expr)) {
-                c_names <- c(colnames(out), colnames(clust_expr[[i]]))
+                c_names <- c(c_names, colnames(clust_expr[[i]]))
                 out <- cbind(out, clust_expr[[i]]);
                 if (is.null(dim(out))){
                         out <- matrix(out, ncol=1)

@@ -1,0 +1,22 @@
+# MultiPath
+
+This is an R package providing functions for multi-group pathway enrichment analysis and visualization.
+
+Functions are provided for pseudobulk differential expression using edgeR, pathway enrichment analysis using overrepresentation analysis (hypergeometric test) and geneset enrichment analysis (GSEA), and automated summarizing and visualization of results across multiple cell-types, spatial regions, or other groupings of data.
+
+Uses GO biological processes, KEGG pathways and Reactome pathways by default, but supports user-specified pathways if preferred. The user can choose overrepresentation analysis, geneset enrichment analysis, or consensus pathways across both methods. 
+
+Results are summarized and visualized across multiple biological groups - such as each cell-type in a single-cell experiment - using a heatmap. Pathways are automatically filtered based on contributing genes to ensure only independent enrichments are reported.
+
+
+## Installation :
+
+>require("remotes")
+>remotes::install_github('tallulandrews/MultiPath')
+
+Example Data:
+
+>require("remotes")
+>remotes::install_github('tallulandrews/M3DExampleData')
+
+## Citation:

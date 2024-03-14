@@ -1,6 +1,6 @@
 compute_cell_type_specific_DE <- function(pseudobulks, design_matrix, fdr=0.05) {
-	sample <- sapply(strsplit(colnames(pseudobulk_expr_mat_all), "_"), function(x){x[[1]]})
-	cell_type <- sapply(strsplit(colnames(pseudobulk_expr_mat_all), "_"), function(x){x[[2]]})
+	sample <- sapply(strsplit(colnames(pseudobulk), "_"), function(x){x[[2]]}) # correct order
+	cell_type <- sapply(strsplit(colnames(pseudobulk), "_"), function(x){x[[1]]}) # correct order
 	all_outs <- list()
 	for (type in cell_type) {
 		dat <- pseudobulks[,cell_type==type]
