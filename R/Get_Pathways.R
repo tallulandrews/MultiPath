@@ -3,13 +3,26 @@
 # library(ExperimentHub)
 # library(GSEABase)
 
+#' Get Pathways from MSigDb
+#'
+#' @description
+#' Downloads common pathways from msigdb for either human or mouse. 
+#' 
+#' @details
+#' Downloads MSigDB Hallmark pathways, GO biological processes, Reactome and Biocarta pathways from `msigdb` for either human or mouse. For human it also adds the KEGG pathways. Optionally also downloads cell-type marker genesets.
+#' @param species whether to download human or mouse pathways
+#' @param include.celltype whether to include cell-type marker genesets.
+#' @return GeneSetCollection object of pathways.
+#' @examples
+#' genesets <- get_pathways("mouse")
+#' genesets <- get_pathways("human")
 get_pathways <- function(species=c("mouse", "human"), include.celltype=FALSE) {
 	if (species == "mouse") {
 		out <- msigdb::getMsigdb(org="mm", id="SYM")
 		if (include.celltype) {
-			genesets <- subsetCollection(out, c('c2','c5','h', 'c8'), c('GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
+			genesets <- subsetCollection(out, c('h', 'c8'), c('GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
 		} else {
-			genesets <- subsetCollection(out, c('c2','c5','h'), c('GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
+			genesets <- subsetCollection(out, c('h'), c('GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
 		}
 	}
 	if (species == "human") {
@@ -25,6 +38,10 @@ get_pathways <- function(species=c("mouse", "human"), include.celltype=FALSE) {
 			genesets <- subsetCollection(out, collection=c('h'), subcollection=c('CP:KEGG', 'GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
 		}
 	}
+	if (species == "test") { # for test-case for this package
+		out <- msigdb::getMsigdb(org="hs", id="SYM")
+		genesets <- subsetCollection(out, collection=c('h'))
+	}
 	if (exists("genesets")) {
 		return(genesets)
 	} else {
@@ -32,7 +49,18 @@ get_pathways <- function(species=c("mouse", "human"), include.celltype=FALSE) {
 	}
 }
 
-Convert_GSEAObj_to_List <- function(gsea_obj) {
+#' Convert GSEAObj
+#'
+#' @description
+#' Converts the GSEA object obtained from msigdb or other Bioconductor pathway database to a list suitable for use in `do_ora`.
+#' 
+#' @param gsea_obj a GeneSet or GeneSetCollection object, such as those obtained from the msigdb database.
+#' @return a list of gene sets.
+#' @examples
+#' genesets <- get_pathways("test")
+#' geneset_list <- Convert_GSEAObj_to_List(genesets)
+#' length(geneset_list)
+convert_GSEAObj_to_list <- function(gsea_obj) {
 	out <- NULL
 	if (class(gsea_obj)[1] =="GeneSet") {
 		out <- list(gsea_obj@geneIds)

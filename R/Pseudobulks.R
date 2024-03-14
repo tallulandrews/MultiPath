@@ -219,7 +219,29 @@ get_pseudobulk <- function(mat, clusters, donors, method=c("sum", "mean"), trim=
         return(out)
 }
 
-# remove duplicate rows, this can be handy if remapping gene IDs.
+#' Remove Duplicate Rows
+#'
+#' @description
+#' Removes rows from a matrix where there are duplicate row names, e.g. when changing gene IDs between databases or species.
+#' 
+#' @details
+#' Combines or selects one row of a matrix to represent all rows with duplicated rownames. There are three approaches:
+#' max : keep the row with the highest average across columns
+#' sum : add up the rows with duplicated rownames for each column.
+#' mean: take the average across the duplicated rows for each column 
+#' @param mat a matrix or sparse matrix of numeric data, such as a gene expression matrix.
+#' @param rownames_dups a vector of rownames for `mat` that contains duplicates.
+#' @param method which approach to use to aggregate data across duplicated rows (see:Details).
+#' @return a matrix with the provided rownames but without duplicates.
+#' @examples
+#' example_data <- generate_test_cellcounts()$counts
+#' gene_ids <- sample(paste("gene", 1:10, sep=""), 20, replace=TRUE)
+#' deduped <- remove_duplicate_rows(example_data, gene_ids, method="max")
+#' total <- remove_duplicate_rows(example_data, gene_ids, method="sum")
+#' avg <- remove_duplicate_rows(example_data, gene_ids, method="mean")
+#' dim(deduped) == dim(total) # TRUE
+#' dim(deduped) == dim(avg) # TRUE
+#' dim(deduped)[1] == length(unique(gene_ids)) # TRUE
 remove_duplicate_rows <- function(mat, rownames_dups, method=c("max", "sum", "mean")) {
         rownames_dups <- as.character(rownames_dups)
         for (g in unique(rownames_dups[duplicated(rownames_dups)])) {

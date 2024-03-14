@@ -1,3 +1,27 @@
+#' GeneSet Enrichment Analysis
+#'
+#' @description
+#' Performs gene set enrichment analysis using fgsea
+#' 
+#' @details
+#' Uses Rcpp backend to optimize overrepresentation analysis (ORA). 
+#' A given set of query genes is tested for enrichment in genes from provided named pathways or genesets, compared to a specified set of background genes. 
+#' Typically a query gene set will be a group of up or down regulated genes obtained from differential expression testing. The background would be all the genes in the count matrix used in the differential expression test. 
+#' ORA is performed with a hypergeometric test against a specified background and applies a FDR multiple testing correction, after filtering provided pathways for terms with a reasonable number of genes attributed to it.
+#' @param scored_genes a vector of scores named with the gene name.
+#' @param pathways a list of gene sets or pathways to test for enrichment. The list must be named by the pathway name and contain vectors of gene names for the genes in that gene set.
+#' @param fdr the FDR threshold used to filter output.
+#' @param min.term.size pathways must have at least this number of genes to be tested.
+#' @param max.term.size pathways must have fewer than this number of genes to be tested.
+#' @param seed random seed that will be set at the start of this function, this ensure complete reproducibility.
+#' @param nperm the number of permutations used to estimate p-values, it is recommended to use at least 30,000 to ensure reproducible results.
+#' @return A list containing two items:
+#' results = a dataframe containing the pathway name, number of query genes in the pathway (intersection), log2foldenrichment, FDR
+#' contrib = a list of genes found in the intersection between this pathway and the query gene set. 
+#' @examples
+#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#' dim(rich$results)[1] == length(rich$contrib) # TRUE
 # note: nperm is set to 100000 because of random instability seen at nperm = 10000
 do_gsea <- function(scored_genes, pathways, fdr=0.05, min.term.size=15, max.term.size=1000, seed=2910, nperm=100000){
 	set.seed(seed)
@@ -54,8 +78,33 @@ List intersectToList(List lt, StringVector x) {
 }
 ')
 
-do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=15, max.term.size=1000, seed=2910){
-	set.seed(seed)
+#' Optimized Overrepresentation Analysis
+#'
+#' @description
+#' Performs overrepresentation analysis using a hypergeometic test with an FDR correction.
+#' 
+#' @details
+#' Uses Rcpp backend to optimize overrepresentation analysis (ORA). 
+#' A given set of query genes is tested for enrichment in genes from provided named pathways or genesets, compared to a specified set of background genes. 
+#' Typically a query gene set will be a group of up or down regulated genes obtained from differential expression testing. The background would be all the genes in the count matrix used in the differential expression test. 
+#' ORA is performed with a hypergeometric test against a specified background and applies a FDR multiple testing correction, after filtering provided pathways for terms with a reasonable number of genes attributed to it.
+#'
+#' adpated from: https://jokergoo.github.io/2023/04/05/speed-up-over-representation-enrichment-analysis/
+#' by: Zuguang Gu
+#' @param sig_genes a vector of gene names that is the query for the ORA
+#' @param pathways a list of gene sets or pathways to test for enrichment. The list must be named by the pathway name and contain vectors of gene names for the genes in that gene set.
+#' @param background a vector of gene games to be used as the background.
+#' @param fdr the FDR threshold used to filter output.
+#' @param min.term.size pathways must have at least this number of genes to be tested.
+#' @param max.term.size pathways must have fewer than this number of genes to be tested.
+#' @return A list containing two items:
+#' results = a dataframe containing the pathway name, number of query genes in the pathway (intersection), log2foldenrichment, FDR
+#' contrib = a list of genes found in the intersection between this pathway and the query gene set. 
+#' @examples
+#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#' dim(rich$results)[1] == length(rich$contrib) # TRUE
+do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=15, max.term.size=1000){
 	# Filter Pathways
 	path_size <- sapply(pathways, length)
 	pathways <- pathways[path_size < max.term.size & path_size > min.term.size]

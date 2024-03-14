@@ -1,3 +1,19 @@
+#' Generate synthetic pseudobulks (one-celltype)
+#'
+#' @description
+#' Generates a synthetic pseudobulk matrix for testing purposes.
+#' 
+#' @details
+#' Generates synthetic pseudobulk data for one cell-type. Sample-specific library sizes are drawn from an exponential distribution and rescaled to the median value. Gene-specific means are drawn from an exponential distribution with rate=1/100, counts are drawn from a negative binomial distribution.
+#' @param ngenes number of genes to generate data for.
+#' @param de_prop proportion of genes to be differentially expressed between biological conditions.
+#' @param nconditions number of different biological conditions for which to generate synthetic data.
+#' @param nsamples_per_condition number of samples for each biological condition.
+#' @param dispersion_factor dispersion parameter (1/size) of the negative bionomial distribution.
+#' @return A matrix of pseudobulk expression with columns named as: [celltype]_[condition]-[sample]
+#' @examples
+#' example_celltype_pseudobulks <- generate_synthetic_pseudobulks_one_cell_type()
+#' dim(example_celltype_pseudobulks)
 generate_synthetic_pseudobulks_one_cell_type <- function(ngenes=100, de_prop=0.5, nconditions=2, nsamples_per_condition=3, dispersion_factor=0.2){
 	if (nsamples < nconditions) {stop("Must have more samples than conditions.")}
 	if (nconditions < 2) {stop("Must have at least 2 biological conditions.")}
@@ -26,6 +42,22 @@ generate_synthetic_pseudobulks_one_cell_type <- function(ngenes=100, de_prop=0.5
 	return(expr_counts)
 }
 
+#' Generate synthetic pseudobulks
+#'
+#' @description
+#' Generates a synthetic pseudobulk matrix for testing purposes.
+#' 
+#' @details
+#' Generates synthetic pseudobulk data for a whole matrix. Sample-specific library sizes are drawn from an exponential distribution and rescaled to the median value. Gene-specific means are drawn from an exponential distribution with rate=1/100, counts are drawn from a negative binomial distribution.
+#' @param ngenes number of genes to generate data for.
+#' @param nconditions number of different biological conditions for which to generate synthetic data.
+#' @param nsamples_per_condition number of samples for each biological condition.
+#' @param ncell_types number of cell-types.
+#' @param dispersion_factor dispersion parameter (1/size) of the negative bionomial distribution.
+#' @return A matrix of pseudobulk expression with columns named as: [celltype]_[condition]-[sample]
+#' @examples
+#' example_celltype_pseudobulks <- generate_synthetic_pseudobulks()
+#' dim(example_celltype_pseudobulks)
 generate_synthetic_pseudobulks <- function(ngenes=100, nconditions=2, nsamples_per_condition=3, ncell_types=3, dispersion_factor=0.2) {
 	all_pseudobulks <- c();
 	for (type in 1:ncell_types) {
@@ -48,6 +80,21 @@ generate_synthetic_pseudobulks <- function(ngenes=100, nconditions=2, nsamples_p
 #	
 #	mat <- matrix(rnorm(1000), ncol=100)
 
+#' Generate Cell Counts for testing
+#'
+#' @description
+#' Generates a synthetic gene x cell umi count matrix for testing methods.
+#' 
+#' @details
+#' Generates a matrix of uniform Poisson distributed counts, as well as vectors of cell-type
+#' and donor of origin labels. These data include one cell-type represented by 1 cell per donor, 
+#' one with 15 cells/donor and one with 30 cells/donor to check for errors in methods.
+#' @return a list with items: counts = umi count matrix, donors = vector of sample of origin labels, celltype = vector of celltype labels
+#' @examples
+#' example_data <- generate_test_cellcounts()
+#' dim(example_data$counts)
+#` table(example_data$donors)
+#` table(example_data$celltypes)
 generate_test_cellcounts <- function() {
 	ndonor=3
 	ngene=20;
