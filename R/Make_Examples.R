@@ -19,23 +19,23 @@ generate_synthetic_pseudobulks_one_cell_type <- function(ngenes=100, de_prop=0.5
 	if (nconditions < 2) {stop("Must have at least 2 biological conditions.")}
 	nsamples = nsamples_per_condition*nconditions
 
-	lib_size <- rexp(nsamples, rate=1)
-	lib_size <- lib_size/median(lib_size)
-	g_means <- rexp(ngenes, rate=1/100)
+	lib_size <- stats::rexp(nsamples, rate=1)
+	lib_size <- lib_size/stats::median(lib_size)
+	g_means <- stats::rexp(ngenes, rate=1/100)
 	g_mean_mat <- matrix(rep(g_means, nsamples_per_condition*nconditions), ncol=nsamples_per_condition*nconditions, nrow=ngenes)
 
 	de <- 1:round(ngenes*de_prop);
 
 	for (i in 1:nconditions) {
 		these_samples = ((i-1)*nsamples_per_condition+1):((i-1)*nsamples_per_condition+nsamples_per_condition)
-		these_g_means <- rexp(max(de), rate=1/100)
+		these_g_means <- stats::rexp(max(de), rate=1/100)
 		g_mean_mat[de, these_samples] <- matrix(rep(these_g_means, nsamples_per_condition), ncol=nsamples_per_condition, nrow=max(de))
 	}
 	g_mean_mat <- t(round(t(g_mean_mat)*lib_size))
 
 	expr_counts <- t(apply(g_mean_mat, 1, function(x) {
 		sapply(x, function(y){
-			rnbinom(1, mu=y, size=1/dispersion_factor)
+			stats::rnbinom(1, mu=y, size=1/dispersion_factor)
 			})
 		}))
 	rownames(expr_counts) <-  paste("Gene", 1:ngenes, sep="")
@@ -105,7 +105,7 @@ generate_test_cellcounts <- function() {
 	ngene=20;
 	celltypes <- c(rep("type1", ndonor), rep("type2", ndonor*15), rep("type3", ndonor*30))
 	donors <- rep(c("donor1", "donor2", "donor3"), times=(1+15+30))
-	mat <- matrix(rpois(ngene*length(celltypes), lambda=10), ncol=length(celltypes))
+	mat <- matrix(stats::rpois(ngene*length(celltypes), lambda=10), ncol=length(celltypes))
 	colnames(mat) <- paste("cell", 1:ncol(mat), sep="")
 	rownames(mat) <- paste("gene", 1:nrow(mat), sep="")
 	return(list(counts=mat, donors=donors, celltypes=celltypes))
@@ -131,13 +131,13 @@ generate_synthetic_enrichments <- function(npathways=10, ngenes=200){
 	all_genes <- paste("Gene", 1:ngenes, sep="")
 	contrib <- list() # genes contributing to each pathway
 	for (i in 1:npathways) {
-		contrib[[i]] <- unique(sample(all_genes, size=rpois(1, lambda=12), replace=TRUE))
+		contrib[[i]] <- unique(sample(all_genes, size=stats::rpois(1, lambda=12), replace=TRUE))
 	}
 	intersection <- sapply(contrib, length)
 	res <- data.frame(pathway=paste("pathway",1:npathways,sep=""),
 			intersection=intersection,
-			log2fe=rnorm(npathways, sd=2),
-			FDR=exp(-abs(rnorm(npathways,mean=5, sd=10))))
+			log2fe=stats::rnorm(npathways, sd=2),
+			FDR=exp(-abs(stats::rnorm(npathways,mean=5, sd=10))))
 	rownames(res) <- res$pathway
 	names(contrib) <- res[,1]
 	return(list(results=res, contrib=contrib))

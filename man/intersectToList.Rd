@@ -13,4 +13,6 @@ intersectToList(lt, x)
 }
 \description{
 This function intersects a list of string vectors with a single string vector.
+adpated from: https://jokergoo.github.io/2023/04/05/speed-up-over-representation-enrichment-analysis/
+originally created by: Zuguang Gu
 }

@@ -21,27 +21,27 @@ get_pathways <- function(species=c("mouse", "human"), include.celltype=FALSE) {
 	if (species == "mouse") {
 		out <- msigdb::getMsigdb(org="mm", id="SYM")
 		if (include.celltype) {
-			genesets <- subsetCollection(out, c('h', 'c8'), c('GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
+			genesets <- msigdb::subsetCollection(out, c('h', 'c8'), c('GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
 		} else {
-			genesets <- subsetCollection(out, c('h'), c('GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
+			genesets <- msigdb::subsetCollection(out, c('h'), c('GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
 		}
 	}
 	if (species == "human") {
 		out <- msigdb::getMsigdb(org="hs", id="SYM")
-		out <- appendKEGG(out)
+		out <- msigdb::appendKEGG(out)
 		# collections: c8 = cell type signatures
 		#		h = hallmark gene sets
 		#		c5 = GO
 		#		c2 = curated pathways
 		if (include.celltype) {
-			genesets <- subsetCollection(out, collection=c('h','c8'), subcollection=c('CP:KEGG', 'GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
+			genesets <- msigdb::subsetCollection(out, collection=c('h','c8'), subcollection=c('CP:KEGG', 'GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
 		} else {
-			genesets <- subsetCollection(out, collection=c('h'), subcollection=c('CP:KEGG', 'GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
+			genesets <- msigdb::subsetCollection(out, collection=c('h'), subcollection=c('CP:KEGG', 'GO:BP', 'CP:REACTOME', 'CP:BIOCARTA'))
 		}
 	}
 	if (species == "test") { # for test-case for this package
 		out <- msigdb::getMsigdb(org="hs", id="SYM")
-		genesets <- subsetCollection(out, collection=c('h'))
+		genesets <- msigdb::subsetCollection(out, collection=c('h'))
 	}
 	if (exists("genesets")) {
 		return(genesets)

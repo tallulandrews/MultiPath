@@ -173,7 +173,7 @@ group_rowmeans <- function(MAT, group_labs, type=c("mean","sum", "var")) {
 		if (nrow(MAT) > 1) {
 	        	mus <- sapply(d, function(group) my_rowVars(MAT[,group]))
 		} else {
-			mus <- sapply(d, function(group) var(MAT[,group])) # only one row
+			mus <- sapply(d, function(group) stats::var(MAT[,group])) # only one row
 		}
 	}
         return(mus);
@@ -222,7 +222,7 @@ group_colmeans <- function(MAT, group_labs, type=c("mean", "sum", "var")) {
 		if(ncol(MAT) > 1) {
         		mus <- sapply(d, function(group) my_colVars(MAT[group,]))
 		} else {
-			mus <- sapply(d, function(group) var(MAT[group,])) # only one col
+			mus <- sapply(d, function(group) stats::var(MAT[group,])) # only one col
 		}
 	}
         return(mus);

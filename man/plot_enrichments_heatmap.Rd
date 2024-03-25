@@ -7,8 +7,8 @@
 plot_enrichments_heatmap(
   list_of_rich,
   ntop = 5,
-  colors = colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple",
-    "magenta")))(100),
+  colors = (grDevices::colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy",
+    "purple", "magenta"))))(100),
   stars = TRUE,
   stars.col = "white",
   remove.prefix = FALSE,

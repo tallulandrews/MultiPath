@@ -4,7 +4,12 @@
 \alias{compute_cell_type_specific_DE_parallel}
 \title{Cell-type specific DE - parallel}
 \usage{
-compute_cell_type_specific_DE_parallel(pseudobulks, design_matrix, fdr = 0.05)
+compute_cell_type_specific_DE_parallel(
+  pseudobulks,
+  design_matrix,
+  fdr = 0.05,
+  n.cores = 1
+)
 }
 \arguments{
 \item{pseudobulks}{a pseudobulk matrix created from get_pseudobulks}

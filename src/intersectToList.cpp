@@ -5,6 +5,8 @@ using namespace Rcpp;
 //' intersectToList
 //'
 //' This function intersects a list of string vectors with a single string vector.
+//' adpated from: https://jokergoo.github.io/2023/04/05/speed-up-over-representation-enrichment-analysis/
+//' originally created by: Zuguang Gu
 //'
 //' @param lt A list of vectors of strings
 //' @param x A vector of strings

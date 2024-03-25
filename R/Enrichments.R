@@ -40,46 +40,6 @@ do_gsea <- function(scored_genes, pathways, fdr=0.05, min.term.size=15, max.term
 	return(list(results=res[keep,], contrib=contrib_genes[keep]))
 }
 
-
-# Optimized ORA
-# adpated from: https://jokergoo.github.io/2023/04/05/speed-up-over-representation-enrichment-analysis/
-# originally created by: Zuguang Gu
-	
-library(Rcpp)
-sourceCpp(code = '
-// [[Rcpp::plugins(cpp11)]]
-
-#include <Rcpp.h>
-#include <unordered_set>
-using namespace Rcpp;
-
-// [[Rcpp::export]]
-List intersectToList(List lt, StringVector x) {
-
-    int n = lt.size();
-    List out(n);
-
-    std::unordered_set<String> seen;
-    seen.insert(x.begin(), x.end());
-
-    for(int i = 0; i < n; i++) {
-      
-        StringVector v = as<StringVector>(lt[i]);
-        LogicalVector l(v.size());
-
-        std::unordered_set<String> seen2;
-
-        for(int j = 0; j < v.size(); j ++) {
-            l[j] = seen.find(v[j]) != seen.end() && seen2.insert(v[j]).second;
-        }
-
-        out[i] = v[l];
-    }
-
-    return out;
-}
-')
-
 #' Optimized Overrepresentation Analysis
 #'
 #' @description
@@ -127,9 +87,9 @@ do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=15, 
 	n <- n_background - m
 	k <- n_genes
     
-	p <- phyper(x - 1, m, n, k, lower.tail = FALSE)
+	p <- stats::phyper(x - 1, m, n, k, lower.tail = FALSE)
 	names(p) <- path_names
-	fdr_res <- p.adjust(p, method="fdr")
+	fdr_res <- stats::p.adjust(p, method="fdr")
 
 	# Generate nice results
 	keep <- fdr_res < fdr
@@ -179,7 +139,6 @@ get_overlaps <- function(out) {
 #' 
 #' @details
 #' Uses single-linkage hierarchical clustering(`hclust`) to group pathway terms based on overlapping contributing genes.
-#' @param out a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea
 #' @param overlaps a matrix of pair-wise overlaps between contributing genes to each pathway, this is obtained from 'get_overlaps'.  
 #' @param equivalent a scalar value for the equivalence threshold.
 #' @param plot.result a boolean determining whether to plot a heatmaps of the overlaps showing he pathway groups.
@@ -190,9 +149,8 @@ get_overlaps <- function(out) {
 #' overlaps <- get_overlaps(rich)
 #' pathway_groups <- cluster_overlaps(overlaps)
 #' @export
-
 cluster_overlaps <- function(overlaps, equivalent=0.5, plot.result=TRUE) {
-	groups <- cutree(hclust(as.dist(1-overlaps), method="single"), h=1-equivalent)
+	groups <- stats::cutree(stats::hclust(stats::as.dist(1-overlaps), method="single"), h=1-equivalent)
 	if (plot.result) {
 		unique_paths = names(table(groups))[table(groups) == 1]
 		anno <- data.frame(group=groups)

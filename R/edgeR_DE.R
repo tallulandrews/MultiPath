@@ -19,15 +19,15 @@
 #' @export
 compute_cell_type_specific_DE <- function(pseudobulks, design_matrix, fdr=0.05) {
 	rownames(design_matrix) <- colnames(pseudobulks)
-	sample <- sapply(strsplit(colnames(pseudobulk), "_"), function(x){x[[2]]}) # correct order
-	cell_type <- sapply(strsplit(colnames(pseudobulk), "_"), function(x){x[[1]]}) # correct order
+	sample <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[2]]}) # correct order
+	cell_type <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[1]]}) # correct order
 	all_outs <- list()
 	for (type in cell_type) {
 		dat <- pseudobulks[,cell_type==type]
 		these_samples <- sample[cell_type==type]
 		# Create the design matrix for this cell-type
 		design <- design_matrix[rownames(design_matrix) %in% these_samples,]
-		if (matrixcalc::is.singular.matrix(design)) {
+		if (Matrix::rankMatrix(design)[1] < ncol(design)) {
 			warning(paste("Warning: DE for", type, "could not be computed because the predictors are dependent."))
 			next;
 		}
@@ -56,17 +56,16 @@ compute_cell_type_specific_DE <- function(pseudobulks, design_matrix, fdr=0.05) 
 #' design <- model.matrix(~conditions)
 #' de <- compute_cell_type_specific_DE_parallel(example_celltype_pseudobulks, design)
 #' @export
-compute_cell_type_specific_DE_parallel <- function(pseudobulks, design_matrix, fdr=0.05) {
-	require(foreach)
-	sample <- sapply(strsplit(colnames(pseudobulk_expr_mat_all), "_"), function(x){x[[1]]})
-	cell_type <- sapply(strsplit(colnames(pseudobulk_expr_mat_all), "_"), function(x){x[[2]]})
-	all_outs <- foreach( type=cell_type) %do% {
+compute_cell_type_specific_DE_parallel <- function(pseudobulks, design_matrix, fdr=0.05, n.cores=1) {
+	sample <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[1]]})
+	cell_type <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[2]]})
+	all_outs <- foreach::foreach( type=cell_type) %do% {
 		dat <- pseudobulks[,cell_type==type]
 		these_samples <- sample[cell_type==type]
 		# Create the design matrix for this cell-type
 		design <- design_matrix[rownames(design_matrix) %in% these_samples,]
-		if (matrixcalc::is.singular.matrix(design)) {
-			warning(paste("Warning: DE for", type, "could not be computed because the predictors are dependent."))
+		if (Matrix::rankMatrix(design)[1] < ncol(design)) {
+			warning(paste("Warning: DE for", type, "could not be computed because the predictors are dependent - design matrix is not full rank."))
 		} else {
 			list(type=type, de=one_cell_type_DE(dat, design, fdr=fdr))
 		}
@@ -104,14 +103,14 @@ one_cell_type_DE <- function(dat, design, fdr=0.05) {
 	dat <- dat[Matrix::rowSums(dat) > 5 & Matrix::rowSums(dat > 0) >= 3,]
 	# Perform DE using edgeR
 	dge <- edgeR::DGEList(counts=dat)
-	dge <- calcNormFactors(dge, method="TMM", refColumn=which(colSums(dat) == max(colSums(dat))))
-	dge <- estimateDisp(dge, design)
-	fit <- glmQLFit(dge, design)
+	dge <- edgeR::calcNormFactors(dge, method="TMM", refColumn=which(Matrix::colSums(dat) == max(Matrix::colSums(dat))))
+	dge <- edgeR::estimateDisp(dge, design)
+	fit <- edgeR::glmQLFit(dge, design)
 	all_contrast_outs <- c()
 	for (i in 2:ncol(design)) {
 		contrast_vec <- rep(0, ncol(design))
 		contrast_vec[i] <- 1
-		de <- topTags(dlmQLFTest(fit, contrast=contrast_vec, n=nrow(dat), p.value=fdr))
+		de <- edgeR::topTags(edgeR::glmQLFTest(fit, contrast=contrast_vec, n=nrow(dat), p.value=fdr))
 		de <- de$table
 		de$Coefficient <- colnames(design)[i]
 		de$Gene <- rownames(de)

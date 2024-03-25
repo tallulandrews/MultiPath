@@ -12,8 +12,6 @@ cluster_overlaps(overlaps, equivalent = 0.5, plot.result = TRUE)
 \item{equivalent}{a scalar value for the equivalence threshold.}
 
 \item{plot.result}{a boolean determining whether to plot a heatmaps of the overlaps showing he pathway groups.}
-
-\item{out}{a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea}
 }
 \value{
 A vector of group IDs for each pathway.

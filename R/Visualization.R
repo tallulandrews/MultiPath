@@ -24,7 +24,7 @@
 #' plot_enrichments_heatmap(list_of_rich)
 #' @export
 
-plot_enrichments_heatmap <- function(list_of_rich, ntop=5, colors=colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=TRUE, stars.col="white", remove.prefix=FALSE, prefix.delim="_", log.scale=FALSE, bounds=NULL, cluster_rows=TRUE, cluster_cols=FALSE, plot.result=TRUE, both.dir=FALSE) {
+plot_enrichments_heatmap <- function(list_of_rich, ntop=5, colors=grDevices::colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=TRUE, stars.col="white", remove.prefix=FALSE, prefix.delim="_", log.scale=FALSE, bounds=NULL, cluster_rows=TRUE, cluster_cols=FALSE, plot.result=TRUE, both.dir=FALSE) {
 	# Collect pathways
 	all_pathways <- c();
 	#pathway_origin <- c();
@@ -155,7 +155,7 @@ generate_heatmap_data <- function(list_of_rich, pathways) {
 #' plot_heatmap(heat_data, stars=FALSE)
 #' plot_heatmap(heat_data, pvals=pvals, stars=TRUE)
 #' @export
-plot_heatmap <- function(data, pvals=NULL, log.scale=FALSE, bounds=NULL, colors=colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=TRUE, stars.col="white", cluster_rows=TRUE, cluster_cols=TRUE, annotation_row = NA, annotation_col = NA) {
+plot_heatmap <- function(data, pvals=NULL, log.scale=FALSE, bounds=NULL, colors=grDevices::colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=TRUE, stars.col="white", cluster_rows=TRUE, cluster_cols=TRUE, annotation_row = NA, annotation_col = NA) {
 
 	if (log.scale) {
 		tmp <- sign(data)
