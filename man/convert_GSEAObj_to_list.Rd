@@ -17,6 +17,6 @@ Converts the GSEA object obtained from msigdb or other Bioconductor pathway data
 }
 \examples{
 genesets <- get_pathways("test")
-geneset_list <- Convert_GSEAObj_to_List(genesets)
+geneset_list <- convert_GSEAObj_to_list(genesets)
 length(geneset_list)
 }

@@ -1,4 +1,30 @@
-plot_enrichments_heatmap <- function(list_of_rich, ntop=5, colors=colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=NULL, stars.col="black", remove.prefix=FALSE, prefix.delim="_", log.scale=FALSE, bounds=NULL, cluster_rows=TRUE, cluster_cols=FALSE, plot.result=TRUE, both.dir=FALSE) {
+#' Plot Enrichment Heatmap
+#'
+#' @description
+#' Summarizes a set of pathway enrichments as a heatmap.
+#'
+#' @details
+#' Selects the top pathways from each set of enrichment results. Then aggregates the significance and enrichment scores for each of the selected pathways across all enrichment results.  
+#' @param list_of_rich a list of pathway enrichments for a single DE test obtained from do_ora or do_fgsea. All enrichments should be calculated using either do_ora or do_fgsea.
+#' @param ntop number of pathways to select from each enrichement results.
+#' @param colors a vector of colors for the heatmap
+#' @param stars a boolean for whether to include stars to indicate significance. 
+#' @param stars.col the text colour of the stars
+#' @param remove.prefix whether to remove the prefix from each pathway name. 
+#' @param prefix.delim the symbol that defines the end of the prefix
+#' @param log.scale whether to log (base2) scale the enrichment scores
+#' @param bounds boundarys for the colour scheme, if NULL then uses a centered boundaries for the maximum range of values.
+#' @param cluster_rows whether to cluster the rows of the heatmap or not
+#' @param cluster_cols whether to cluster the columns of the heatmap or not
+#' @param plot.result whether to make the plot or just calculate the summarized results.
+#' @param both.dir whether to select the ntop pathways both up & down or just the ntop based on pvalue regardless of direction 
+#' @examples
+#' list_of_rich <- lapply(rpois(5, lambda=10), generate_synthetic_enrichments, ngenes=100)
+#' names(list_of_rich) <- paste("celltype", 1:length(list_of_rich), sep="")
+#' plot_enrichments_heatmap(list_of_rich)
+#' @export
+
+plot_enrichments_heatmap <- function(list_of_rich, ntop=5, colors=colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=TRUE, stars.col="white", remove.prefix=FALSE, prefix.delim="_", log.scale=FALSE, bounds=NULL, cluster_rows=TRUE, cluster_cols=FALSE, plot.result=TRUE, both.dir=FALSE) {
 	# Collect pathways
 	all_pathways <- c();
 	#pathway_origin <- c();
@@ -24,7 +50,9 @@ plot_enrichments_heatmap <- function(list_of_rich, ntop=5, colors=colorRampPalet
 	#pathway_origin <- pathway_origin[!dups]
 
 	# Generate data for heatmap	
-	heat_data <- generate_heatmap_data(list_of_rich, all_pathways)
+	heat_data_all <- generate_heatmap_data(list_of_rich, all_pathways)
+	heat_data <- heat_data_all$heat_data
+	heat_pvals <- heat_data_all$heat_pvals
 
 	# Tidy up pathway names.
 	if (plot.result) {
@@ -37,14 +65,18 @@ plot_enrichments_heatmap <- function(list_of_rich, ntop=5, colors=colorRampPalet
 			tags <- sapply(strsplit(all_pathways, prefix.delim), function(x){x[[1]]})
 			all_pathway_names <- sub(paste0("^[^",prefix.delim,"]*",prefix.delim, sep=""), "", all_pathways)
 			anno_row <- data.frame(tags); rownames(anno_row) <- all_pathways;
-			rownames(heat_data) <- all_pathway_names
-			plot_heatmap(heat_data, log.scale=log.scale, bounds=bounds, colors=colors, 
+			rownames(heat_data_all$heat_data) <- all_pathway_names
+			plot_heatmap(heat_data_all$heat_data, heat_data_all$heat_pvals, 
+					log.scale=log.scale, bounds=bounds, colors=colors, 
+					stars=stars, stars.col=stars.col,
 					cluster_rows=cluster_rows, cluster_cols=cluster_cols, 
 					annotation_row = anno_row, annotation_col = NA)
 		} else {
 			all_pathway_names <- all_pathways
-			rownames(heat_data) <- all_pathway_names
-			plot_heatmap(heat_data, log.scale=log.scale, bounds=bounds, colors=colors, 
+			rownames(heat_data_all$heat_data) <- all_pathway_names
+			plot_heatmap(heat_data_all$heat_data, heat_data_all$heat_pvals, 
+					log.scale=log.scale, bounds=bounds, colors=colors, 
+					stars=stars, stars.col=stars.col,
 					cluster_rows=cluster_rows, cluster_cols=cluster_cols, 
 					annotation_row = NA, annotation_col = NA)
 		}
@@ -52,21 +84,78 @@ plot_enrichments_heatmap <- function(list_of_rich, ntop=5, colors=colorRampPalet
 	return(heat_data)
 }
 
+
+#' Collect Heatmap Data
+#'
+#' @description
+#' Collects enrichment scores and FDR p-values from a set of enrichments.
+#' 
+#' @details
+#' Combines enrichment scores and FDRs from a list of enrichment output into two matrices which can be plotted as a heatmap across all cell-types.
+#' pathways missing from one or another cell-type are assigned scores of 0, and p-values of 1.
+#'
+#' @param list_of_rich a list of output from do_ora or do_fgsea typically from multiple cell-types
+#' @param pathways which pathways to aggregate.
+#' @return a list of "scores" and "pvalues" for the provided pathways across all cell-types.
+#' @examples
+#' list_of_rich <- lapply(rpois(5, lambda=10), generate_synthetic_enrichments, ngenes=100)
+#' names(list_of_rich) <- paste("celltype", 1:length(list_of_rich), sep="")
+#' heat_data <- generate_heatmap_data(list_of_rich, pathways=c("pathway1", "pathway2", "pathway5", "pathway7"))
+#' dim(heat_data$scores)
+#' dim(heat_data$pvalues)
+#' @export
+
 # list of rich is a list of "out" from our enrichment methods - i.e. contains $results and $contrib
 generate_heatmap_data <- function(list_of_rich, pathways) {
 	heat_toplot <- matrix(-1, nrow=length(pathways), ncol=length(list_of_rich))
 	rownames(heat_toplot) <- pathways
 	colnames(heat_toplot) <- names(list_of_rich)
+	heat_pvals <- matrix(-1, nrow=length(pathways), ncol=length(list_of_rich))
+	rownames(heat_pvals) <- pathways
+	colnames(heat_pvals) <- names(list_of_rich)
 	for (this_i in names(list_of_rich)) {
 		these_rich <- list_of_rich[[this_i]]
 		scores <- these_rich$results[match(pathways, these_rich$results$pathway),3]
+		pvals <- these_rich$results[match(pathways, these_rich$results$pathway),"fdr"]
 		heat_toplot[,this_i] <- scores
+		heat_pvals[,this_i] <- pvals
 	}
 	heat_toplot[is.na(heat_toplot)] <- 0
-	return(heat_toplot)
+	heat_pvals[is.na(heat_pvals)] <- 1
+	return(list(scores=heat_toplot, pvalues=heat_pvals))
 }
 
-plot_heatmap <- function(data, log.scale=FALSE, bounds=NULL, colors=colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), cluster_rows=TRUE, cluster_cols=TRUE, annotation_row = NA, annotation_col = NA) {
+#' Plot Heatmap
+#'
+#' @description
+#' Plots a heatmap of a provided enrichment score matrix.
+#' 
+#' @details
+#' log.scale : data is log2-scaled as log2(abs(data)+1)*sign(data) this preserves the +ve/-ve sign which is used for the direction of the expression of the pathway in each cell-type.
+#'
+#' stars : plots a "*" for enrichments significant at p < 0.05, "**" for p < 0.0005, and "***" for p < 0.000005
+#' 
+#' @param data a matrix of enrichment scores for various pathways across multiple cell-types
+#' @param pvals a matrix of FDR or other adjusted p-values for each enrichment in data
+#' @param log.scale whether to log-scale the provided scores (data - See Details).
+#' @param bounds the boundaries uses for the color scheme of the enrichment scores. By default will use a centered boundary covering the full range of data.
+#' @param colors a vector of colors, the color scale used for enrichment scores.
+#' @param stars boolean, whether to plot stars indicating signifcance of the enrichments (see Details).
+#' @param stars.col the color for the stars
+#' @param cluster_rows whether to cluster & rearrange the rows of the heatmap
+#' @param cluster_cols whether to cluster & rearrange the columns of the heatmap
+#' @param annotation_row a matrix of annotations for the rows of the heatmaps (see:pheatmap)
+#' @param annotation_col a matrix of annotations for the columns of the heatmaps (see:pheatmap)
+#' @return A matrix of overlap scores for all pairs of pathways.
+#' @examples
+#' heat_data <- matrix(rnorm(100), ncol=10)
+#' rownames(heat_data) <- paste("pathway", 1:nrow(heat_data), sep="")
+#' colnames(heat_data) <- paste("celltype", 1:ncol(heat_data), sep="")
+#' pvals=exp(-abs(rnorm(100,mean=5, sd=10)))
+#' plot_heatmap(heat_data, stars=FALSE)
+#' plot_heatmap(heat_data, pvals=pvals, stars=TRUE)
+#' @export
+plot_heatmap <- function(data, pvals=NULL, log.scale=FALSE, bounds=NULL, colors=colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=TRUE, stars.col="white", cluster_rows=TRUE, cluster_cols=TRUE, annotation_row = NA, annotation_col = NA) {
 
 	if (log.scale) {
 		tmp <- sign(data)
@@ -78,9 +167,18 @@ plot_heatmap <- function(data, log.scale=FALSE, bounds=NULL, colors=colorRampPal
 		max_range <- max(abs(data))
 		bounds = c(-max_range, max_range)
 	}
+	star_mat <- matrix("",ncol=ncol(data), nrow=nrow(data))
+	if (stars) {
+		if(is.null(pvals)) {stop("Error: you must provide an adjusted p-value matrix to plot stars.")}
+		if(!identical(dim(data), dim(pvals))) {stop("Error: pvals must be the same dimensions as data.")}
+		start_mat[pvals < 0.05] <- "*"
+		start_mat[pvals < 0.0005] <- "**"
+		start_mat[pvals < 0.000005] <- "***"
+	}
 
 	pheatmap::pheatmap(data, color=colors, 
 		breaks=seq(from=bounds[1], to=bounds[2], length=length(colors)+1),
+		display_numbers=star_mat, number_color=stars.col,
 		cluster_rows=cluster_rows, cluster_cols=cluster_cols, 
 		annotation_row=annotation_row, annotation_col=annotation_col)
 }

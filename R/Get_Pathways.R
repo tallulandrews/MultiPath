@@ -16,6 +16,7 @@
 #' @examples
 #' genesets <- get_pathways("mouse")
 #' genesets <- get_pathways("human")
+#' @export
 get_pathways <- function(species=c("mouse", "human"), include.celltype=FALSE) {
 	if (species == "mouse") {
 		out <- msigdb::getMsigdb(org="mm", id="SYM")
@@ -58,8 +59,9 @@ get_pathways <- function(species=c("mouse", "human"), include.celltype=FALSE) {
 #' @return a list of gene sets.
 #' @examples
 #' genesets <- get_pathways("test")
-#' geneset_list <- Convert_GSEAObj_to_List(genesets)
+#' geneset_list <- convert_GSEAObj_to_list(genesets)
 #' length(geneset_list)
+#' @export
 convert_GSEAObj_to_list <- function(gsea_obj) {
 	out <- NULL
 	if (class(gsea_obj)[1] =="GeneSet") {
@@ -68,7 +70,7 @@ convert_GSEAObj_to_list <- function(gsea_obj) {
 		return(out)
 	}
 	if(class(gsea_obj)[1] == "GeneSetCollection") {
-		tmp <- lapply(gsea_obj, Convert_GSEAObj_to_List)
+		tmp <- lapply(gsea_obj, convert_GSEAObj_to_list)
 		return(sapply(tmp, function(x){x}))
 	}
 }

@@ -4,7 +4,7 @@
 \alias{group_rowmeans}
 \title{Group Row Means}
 \usage{
-group_rowmeans(MAT, group_labs, type = c("mean", "sum"))
+group_rowmeans(MAT, group_labs, type = c("mean", "sum", "var"))
 }
 \arguments{
 \item{MAT}{a matrix or sparse matrix of values to be aggregated}
@@ -20,10 +20,17 @@ a matrix of the row means for each group.
 Optimized code for calculating the row means or row sums of a matrix after grouping the columns by a vector of groups.
 }
 \details{
-Uses my_rowSums and my_rowMeans to calculate a matrix of row means or row sums for each group devinfed in group_labs. Note normalized expression should be averaged while raw counts should be summed.
+Uses my_rowSums, my_rowMeans, and my_rowVars to calculate a matrix of row means, row sums, or row variances for each group devinfed in group_labs. Note normalized expression should be averaged while raw counts should be summed.
 }
 \examples{
 example_data <- generate_test_cellcounts()
-avg_celltype_counts <- group_rowmeans(example_data$counts,example_data$celltypes)
-avg_donor_counts <- group_rowmeans(example_data$counts,example_data$donors)
+total_celltype_counts <- group_rowmeans(example_data$counts,example_data$celltypes, type="sum")
+avg_donor_counts <- group_rowmeans(example_data$counts,example_data$donors, type="mean")
+#Test cases
+group_rowmeans(example_data$counts, c("A", rep("B", ncol(example_data$counts)-1)), type="sum") # group with 1 entry
+group_rowmeans(example_data$counts, c("A", rep("B", ncol(example_data$counts)-1)), type="mean") # group with 1 entry
+group_rowmeans(example_data$counts, c("A", rep("B", ncol(example_data$counts)-1)), type="var") # group with 1 entry
+group_rowmeans(example_data$counts[1,], example_data$donor, type="sum") # data with 1 row
+group_rowmeans(example_data$counts[1,], example_data$donor, type="mean") # data with 1 row
+group_rowmeans(example_data$counts[1,], example_data$donor, type="var") # data with 1 row
 }

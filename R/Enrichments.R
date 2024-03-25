@@ -20,8 +20,10 @@
 #' contrib = a list of genes found in the intersection between this pathway and the query gene set. 
 #' @examples
 #' paths <- convert_GSEAObj_to_list(get_pathways("test"))
-#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
-#' dim(rich$results)[1] == length(rich$contrib) # TRUE
+#' l2fc <- rnorm(100, sd=2)
+#' names(l2fc) <- sample(unlist(paths), size=100)
+#' rich <- do_gsea(l2fc, paths, nperm=50) # nperm should be a minimum of 50000 for reproducible results
+#' @export
 # note: nperm is set to 100000 because of random instability seen at nperm = 10000
 do_gsea <- function(scored_genes, pathways, fdr=0.05, min.term.size=15, max.term.size=1000, seed=2910, nperm=100000){
 	set.seed(seed)
@@ -104,6 +106,7 @@ List intersectToList(List lt, StringVector x) {
 #' paths <- convert_GSEAObj_to_list(get_pathways("test"))
 #' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 #' dim(rich$results)[1] == length(rich$contrib) # TRUE
+#' @export
 do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=15, max.term.size=1000){
 	# Filter Pathways
 	path_size <- sapply(pathways, length)
@@ -140,6 +143,21 @@ do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=15, 
 }
 
 # ================== Functions for condensing synonymous pathways ================ #
+
+#' Pathway Overlaps
+#'
+#' @description
+#' Calculates the degree of overlap between genes contributing to each pathway enrichment.
+#' 
+#' @details
+#' Overlaps are calculated as the length of the intersection divided by the total genes in the larger pathway.
+#' @param out a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea
+#' @return A matrix of overlap scores for all pairs of pathways.
+#' @examples
+#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#' overlaps <- get_overlaps(rich)
+#' @export
 get_overlaps <- function(out) {
 	total_genes <- sapply(out$contrib, length)
 	olap <- lapply(out$contrib, function(x) {sapply(intersectToList(out$contrib, x), length)})
@@ -154,6 +172,25 @@ get_overlaps <- function(out) {
 }
 
 
+#' Cluster Pathways
+#'
+#' @description
+#' Clusters pathways based on overlapping contributing genes.
+#' 
+#' @details
+#' Uses single-linkage hierarchical clustering(`hclust`) to group pathway terms based on overlapping contributing genes.
+#' @param out a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea
+#' @param overlaps a matrix of pair-wise overlaps between contributing genes to each pathway, this is obtained from 'get_overlaps'.  
+#' @param equivalent a scalar value for the equivalence threshold.
+#' @param plot.result a boolean determining whether to plot a heatmaps of the overlaps showing he pathway groups.
+#' @return A vector of group IDs for each pathway.
+#' @examples
+#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#' overlaps <- get_overlaps(rich)
+#' pathway_groups <- cluster_overlaps(overlaps)
+#' @export
+
 cluster_overlaps <- function(overlaps, equivalent=0.5, plot.result=TRUE) {
 	groups <- cutree(hclust(as.dist(1-overlaps), method="single"), h=1-equivalent)
 	if (plot.result) {
@@ -165,6 +202,26 @@ cluster_overlaps <- function(overlaps, equivalent=0.5, plot.result=TRUE) {
 	return(groups)
 }
 
+#' Select Term
+#'
+#' @description
+#' Selects one pathway to represent a group of pathways
+#' 
+#' @details
+#' Given a set of synonymous pathways, this function selects one pathway to represent the group. Each pathway is scored based on the length of the pathway name, the p-value of the pathway enrichment, the size of the intersection between the pathway and the DE gens, and whether or not the pathway is a signalling pathway. Each value is ranked across pathways using the "min" method to resolve ties.
+#' These ranks are summed and the best scoring pathway is selected.
+#' @param out a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea
+#' @param terms a vector of names of pathways that are synonymous
+#' @param verbose boolean, whether to print data table used as the basis for selecting the term.
+#' @param prioritize.signaling a boolean, indicating whether pathways recieve a bonus for being signalling pathways
+#' @return The name of one pathway to represent the group.
+#' @examples
+#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#' overlaps <- get_overlaps(rich)
+#' pathway_groups <- cluster_overlaps(overlaps)
+#' chosen1 <- select_term(rich, rich$pathway[pathway_groups == "1"])
+#' @export
 select_term <- function(out, terms, verbose=FALSE, prioritize.signaling=TRUE) {
 	term_length <- sapply(strsplit(terms, "[ _]"), length)
 	intersection_size <- out$results$intersection[match(terms, out$results$pathway)]
@@ -185,6 +242,25 @@ select_term <- function(out, terms, verbose=FALSE, prioritize.signaling=TRUE) {
 	return(terms[chosen][1]) # ensure only one term is returned for each group.
 }
 
+#' Condense Terms
+#'
+#' @description
+#' Removes synonymous pathways from a set of output pathway enrichments
+#' 
+#' @details 
+#' First calculates overlaps using 'get_overlaps' then identifies groups of synonymous pathways using 'cluster_overlaps' then selects the best representative term for each group using 'select_term'.
+#'
+#' @param out a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea
+#' @param equivalent a scalar value for the equivalence threshold.
+#' @param verbose boolean, whether to print data table used as the basis for selecting representative terms.
+#' @param prioritize.signaling a boolean, indicating whether pathways recieve a bonus for being signalling pathways
+#' @return The same structured data like the output from do_ora or do_fgse but with synonmyous termscondensed into a single pathway
+#' @examples
+#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#' rich <- condense_terms(rich)
+#' @export
+
 # select one representative for each group of overlapping terms
 condense_terms <- function(out, equivalent=0.5, verbose=FALSE, prioritize.signaling=TRUE) {
 	overlaps <- get_overlaps(out)
@@ -199,6 +275,27 @@ condense_terms <- function(out, equivalent=0.5, verbose=FALSE, prioritize.signal
 	return(new_out)
 }
 
+
+#' Trim Pathway Names
+#'
+#' @description
+#' Trims the length of pathway names.
+#' 
+#' @details 
+#' Removes a prefix and truncates the pathway names to a specified maximum number of words. 
+#' This improves plot appearance when very long pathways are selected.
+#'
+#' @param out a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea
+#' @param prefix_length the number of 'words' that make up the prefix you want to remove.
+#' @param nwords the maximum number of words in the final pathway name.
+#' @param split_char the regular expression to use to split the pathway name into individual words
+#' @return pathway enrichments provided in the "out" argument with an additional column in the results that includes the trimmed pathway name.
+#' @examples
+#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#' rich <- condense_terms(rich)
+#' rich <- trim_pathway_names(rich)
+#' @export
 trim_pathway_names <- function(out, prefix_length=1, nwords=4, split_char="_") {
 	curr_names <- out$results$pathway
 	split <- strsplit(curr_names, split_char)

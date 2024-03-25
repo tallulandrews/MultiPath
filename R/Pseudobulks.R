@@ -9,6 +9,7 @@
 #' example_data <- generate_test_cellcounts()
 #' my_rowMeans(example_data$counts)
 #' my_rowMeans(c(1,2,3,4,5,6,7,8,10))
+#' @export
 my_rowMeans <- function(x) {
         if (!is.null(ncol(x))) {
                 if (ncol(x) > 1) {
@@ -17,6 +18,7 @@ my_rowMeans <- function(x) {
         }
         return(x);
 }
+
 #' rowSums wrapper
 #'
 #' @description
@@ -28,6 +30,7 @@ my_rowMeans <- function(x) {
 #' example_data <- generate_test_cellcounts()
 #' my_rowSums(example_data$counts)
 #' my_rowSums(c(1,2,3,4,5,6,7,8,10))
+#' @export
 my_rowSums <- function(x) {
         if (!is.null(ncol(x))) {
                 if (ncol(x) > 1) {
@@ -36,6 +39,7 @@ my_rowSums <- function(x) {
         }
         return(x);
 }
+
 #' colMeans wrapper
 #'
 #' @description
@@ -47,6 +51,7 @@ my_rowSums <- function(x) {
 #' example_data <- generate_test_cellcounts()
 #' my_colMeans(example_data$counts)
 #' my_colMeans(c(1,2,3,4,5,6,7,8,10))
+#' @export
 my_colMeans <- function(x) {
         if (!is.null(nrow(x))) {
                 if (nrow(x) > 1) {
@@ -55,6 +60,7 @@ my_colMeans <- function(x) {
         }
         return(x);
 }
+
 #' colSums wrapper
 #'
 #' @description
@@ -66,6 +72,7 @@ my_colMeans <- function(x) {
 #' example_data <- generate_test_cellcounts()
 #' my_colSums(example_data$counts)
 #' my_colSums(c(1,2,3,4,5,6,7,8,10))
+#' @export
 my_colSums <- function(x) {
         if (!is.null(nrow(x))) {
                 if (nrow(x) > 1) {
@@ -75,51 +82,148 @@ my_colSums <- function(x) {
         return(x);
 }
 
+#' Sparse-Matrix compatible rowVars
+#'
+#' @description
+#' Uses rowMeans to calculate variance of each row for sparse matrices.
+#' 
+#' @param x a matrix or Matrix or a vector.
+#' @return variances of each row of the matrix or 0s if supplied with a vector.
+#' @examples
+#' example_data <- generate_test_cellcounts()
+#' my_rowVars(example_data$counts)
+#' my_rowVars(c(1,2,3,4,5,6,7,8,10))
+#' @export
+my_rowVars <- function(x) {
+        if (!is.null(nrow(x))) {
+                if (nrow(x) > 1) {
+			center <- Matrix::rowMeans(x)
+			n <- ncol(x)
+			vars <- n/(n-1)*(Matrix::rowMeans(x^2) - center^2)
+                        return(vars)
+                }
+        }
+        return(rep(0, length(x)));
+}
+
+#' Sparse-Matrix compatible colVars
+#'
+#' @description
+#' Uses colMeans to calculate variance of each column for sparse matrices.
+#' 
+#' @param x a matrix or Matrix or a vector.
+#' @return variances of each column of the matrix or 0s if supplied with a vector.
+#' @examples
+#' example_data <- generate_test_cellcounts()
+#' my_colVars(example_data$counts)
+#' my_colVars(c(1,2,3,4,5,6,7,8,10))
+#' @export
+my_colVars <- function(x) {
+        if (!is.null(ncol(x))) {
+                if (ncol(x) > 1) {
+			center <- Matrix::colMeans(x)
+			n <- nrow(x)
+			vars <- n/(n-1)*(Matrix::colMeans(x^2) - center^2)
+                        return(vars)
+                }
+        }
+        return(rep(0, length(x)));
+}
+
 #' Group Row Means
 #'
 #' @description
 #' Optimized code for calculating the row means or row sums of a matrix after grouping the columns by a vector of groups.
 #' 
 #' @details
-#' Uses my_rowSums and my_rowMeans to calculate a matrix of row means or row sums for each group devinfed in group_labs. Note normalized expression should be averaged while raw counts should be summed.
+#' Uses my_rowSums, my_rowMeans, and my_rowVars to calculate a matrix of row means, row sums, or row variances for each group devinfed in group_labs. Note normalized expression should be averaged while raw counts should be summed.
 #' @param MAT a matrix or sparse matrix of values to be aggregated
 #' @param group_labs a vector of group labels equal in length to the number of columsn of MAT.
 #' @param type whether to calculate the row means or row sums
 #' @return a matrix of the row means for each group.
 #' @examples
 #' example_data <- generate_test_cellcounts()
-#' avg_celltype_counts <- group_rowmeans(example_data$counts,example_data$celltypes)
-#' avg_donor_counts <- group_rowmeans(example_data$counts,example_data$donors)
-group_rowmeans <- function(MAT, group_labs, type=c("mean","sum")) {
+#' total_celltype_counts <- group_rowmeans(example_data$counts,example_data$celltypes, type="sum")
+#' avg_donor_counts <- group_rowmeans(example_data$counts,example_data$donors, type="mean")
+#' #Test cases
+#' group_rowmeans(example_data$counts, c("A", rep("B", ncol(example_data$counts)-1)), type="sum") # group with 1 entry
+#' group_rowmeans(example_data$counts, c("A", rep("B", ncol(example_data$counts)-1)), type="mean") # group with 1 entry
+#' group_rowmeans(example_data$counts, c("A", rep("B", ncol(example_data$counts)-1)), type="var") # group with 1 entry
+#' group_rowmeans(example_data$counts[1,], example_data$donor, type="sum") # data with 1 row
+#' group_rowmeans(example_data$counts[1,], example_data$donor, type="mean") # data with 1 row
+#' group_rowmeans(example_data$counts[1,], example_data$donor, type="var") # data with 1 row
+#' @export
+group_rowmeans <- function(MAT, group_labs, type=c("mean","sum", "var")) {
         d <- split(seq(ncol(MAT)), group_labs);
 	if (type[1] == "mean") {
-	        mus <- sapply(d, function(group) my_rowMeans(MAT[,group]))
-	} else {
-	        mus <- sapply(d, function(group) my_rowSums(MAT[,group]))
+		if(nrow(MAT) > 1) {
+	        	mus <- sapply(d, function(group) my_rowMeans(MAT[,group]))
+		} else {
+			mus <- sapply(d, function(group) mean(MAT[,group])) # only one row
+		}
 	} 
+	if (type[1] == "sum") {
+		if (nrow(MAT) > 1) {
+	        	mus <- sapply(d, function(group) my_rowSums(MAT[,group]))
+		} else {
+			mus <- sapply(d, function(group) sum(MAT[,group])) # only one row
+		}
+	} 
+	if (type[1] == "var") {
+		if (nrow(MAT) > 1) {
+	        	mus <- sapply(d, function(group) my_rowVars(MAT[,group]))
+		} else {
+			mus <- sapply(d, function(group) var(MAT[,group])) # only one row
+		}
+	}
         return(mus);
 }
+
 #' Group Column Means
 #'
 #' @description
 #' Optimized code for calculating the column means or column sums of a matrix after grouping the columns by a vector of groups.
 #' 
 #' @details
-#' Uses my_colSums and my_colMeans to calculate a matrix of column means or column sums for each group devinfed in group_labs. Note normalized expression should be averaged while raw counts should be summed.
+#' Uses my_colSums, my_colMeans, and my_rowVars to calculate a matrix of column means, column sums, or column variances for each group devinfed in group_labs. Note normalized expression should be averaged while raw counts should be summed.
 #' @param MAT a matrix or sparse matrix of values to be aggregated
 #' @param group_labs a vector of group labels equal in length to the number of columsn of MAT.
-#' @param type whether to calculate the column means or column sums
+#' @param type whether to calculate the column means, column sums, or column variances
 #' @return a matrix of the column means for each group.
 #' @examples
 #' example_data <- generate_test_cellcounts()
-#' avg_celltype_counts <- group_colmeans(t(example_data$counts),example_data$celltypes)
-#' avg_donor_counts <- group_colmeans(t(example_data$counts),example_data$donors)
-group_colmeans <- function(MAT, group_labs, type=c("mean", "sum")) {
+#' total_celltype_counts <- group_colmeans(t(example_data$counts),example_data$celltypes, type="sum")
+#' avg_donor_counts <- group_colmeans(t(example_data$counts),example_data$donors, type="mean")
+#' #Test cases
+#' group_colmeans(example_data$counts, c("A", rep("B", nrow(example_data$counts)-1)), type="sum") # group with 1 entry
+#' group_colmeans(example_data$counts, c("A", rep("B", nrow(example_data$counts)-1)), type="mean") # group with 1 entry
+#' group_colmeans(example_data$counts, c("A", rep("B", nrow(example_data$counts)-1)), type="var") # group with 1 entry
+#' group_colmeans(t(example_data$counts)[,1], example_data$donor, type="sum") # data with 1 column
+#' group_colmeans(t(example_data$counts)[,1], example_data$donor, type="mean") # data with 1 column
+#' group_colmeans(t(example_data$counts)[,1], example_data$donor, type="var") # data with 1 column
+#' @export
+group_colmeans <- function(MAT, group_labs, type=c("mean", "sum", "var")) {
         d <- split(seq(nrow(MAT)), group_labs);
 	if (type[1] == "mean") {
-        	mus <- sapply(d, function(group) my_colMeans(MAT[group,]))
-	} else {
-        	mus <- sapply(d, function(group) my_colSums(MAT[group,]))
+		if(ncol(MAT) > 1) {
+        		mus <- sapply(d, function(group) my_colMeans(MAT[group,]))
+		} else {
+			mus <- sapply(d, function(group) mean(MAT[group,])) # only one col
+		}
+	}
+	if (type[1] == "sum") {
+		if(ncol(MAT) > 1) {
+        		mus <- sapply(d, function(group) my_colSums(MAT[group,]))
+		} else {
+			mus <- sapply(d, function(group) sum(MAT[group,])) # only one col
+		}
+	}
+	if (type[1] == "var") {
+		if(ncol(MAT) > 1) {
+        		mus <- sapply(d, function(group) my_colVars(MAT[group,]))
+		} else {
+			mus <- sapply(d, function(group) var(MAT[group,])) # only one col
+		}
 	}
         return(mus);
 }
@@ -139,6 +243,7 @@ group_colmeans <- function(MAT, group_labs, type=c("mean", "sum")) {
 #' @examples
 #' example_data <- generate_test_cellcounts()
 #' trim_for_pseudobulks(example_data$celltypes, example_data$donors) # all of celltype1 should be identified for removal.
+#' @export
 trim_for_pseudobulks <- function(clusters, individual, nmin=10) {
         tmp <- table(clusters, individual)
         toofew <- which(tmp < nmin, arr.ind=TRUE)
@@ -157,7 +262,7 @@ trim_for_pseudobulks <- function(clusters, individual, nmin=10) {
 #' To avoid noise from samples where only a small number of cells of a particular cell-type are found, it automatically filters out cases where there are fewer than `trim` cells of a particular cell-type in a particular sample.
 #' Note: to avoid issues retreiving sample & cell-type IDs from the output column names, all underscores in the original clusters and donor ids are replaced with a dash("-").
 #' 
-#' @param mat a matrix of umi counts or normalized expression for each cell, supports sparse matrices
+#' @param mat a matrix of umi counts or normalized expression for each cell, genes=rows, cells=columns, supports sparse matrices
 #' @param clusters a vector of cluster or cell-type labels for each cell.
 #' @param donors a vector of donor or sample labels for each cell.
 #' @param method whether to add up or average the expression in each cell-type x sample group of cell.
@@ -166,12 +271,13 @@ trim_for_pseudobulks <- function(clusters, individual, nmin=10) {
 #' @return  A matrix of pseudobulk expression with column names in the format: [cluster]_[donor].
 #' @examples
 #'   example_data <- generate_test_cellcounts()
-#'   test1 <- get_pseudobulk(tmp$counts, clusters=tmp$celltypes, donors=tmp$donors)
+#'   test1 <- get_pseudobulk(example_data$counts, clusters=example_data$celltypes, donors=example_data$donors)
 #'   dim(test1) # should be 20 x 6
-#'   test2 <- get_pseudobulk(tmp$counts, clusters=tmp$celltypes, donors=tmp$donors, trim=0)
+#'   test2 <- get_pseudobulk(example_data$counts, clusters=example_data$celltypes, donors=example_data$donors, trim=0)
 #'   dim(test2) # should be 20 x 9
 #'   sample <- sapply(strsplit(colnames(test2), "_"), function(x){x[[2]]})
 #'   cell_type <- sapply(strsplit(colnames(test2), "_"), function(x){x[[1]]})
+#' @export
 get_pseudobulk <- function(mat, clusters, donors, method=c("sum", "mean"), trim=10, refactor=TRUE) {
 	#avoid naming issues - we use underscores to sepearate cluster vs donor in pseudobulk column names
 	clusters <- sub("_", "-", clusters)
@@ -242,6 +348,7 @@ get_pseudobulk <- function(mat, clusters, donors, method=c("sum", "mean"), trim=
 #' dim(deduped) == dim(total) # TRUE
 #' dim(deduped) == dim(avg) # TRUE
 #' dim(deduped)[1] == length(unique(gene_ids)) # TRUE
+#' @export
 remove_duplicate_rows <- function(mat, rownames_dups, method=c("max", "sum", "mean")) {
         rownames_dups <- as.character(rownames_dups)
         for (g in unique(rownames_dups[duplicated(rownames_dups)])) {

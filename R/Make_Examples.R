@@ -14,9 +14,10 @@
 #' @examples
 #' example_celltype_pseudobulks <- generate_synthetic_pseudobulks_one_cell_type()
 #' dim(example_celltype_pseudobulks)
+#' @export
 generate_synthetic_pseudobulks_one_cell_type <- function(ngenes=100, de_prop=0.5, nconditions=2, nsamples_per_condition=3, dispersion_factor=0.2){
-	if (nsamples < nconditions) {stop("Must have more samples than conditions.")}
 	if (nconditions < 2) {stop("Must have at least 2 biological conditions.")}
+	nsamples = nsamples_per_condition*nconditions
 
 	lib_size <- rexp(nsamples, rate=1)
 	lib_size <- lib_size/median(lib_size)
@@ -26,9 +27,9 @@ generate_synthetic_pseudobulks_one_cell_type <- function(ngenes=100, de_prop=0.5
 	de <- 1:round(ngenes*de_prop);
 
 	for (i in 1:nconditions) {
-		these_samples = ((i-1)*samples_per_condition+1):((i-1)*samples_per_condition+samples_per_condition)
+		these_samples = ((i-1)*nsamples_per_condition+1):((i-1)*nsamples_per_condition+nsamples_per_condition)
 		these_g_means <- rexp(max(de), rate=1/100)
-		g_mean_mat[de, these_samples] <- matrix(rep(these_g_means, samples_per_condition), ncol=samples_per_condition, nrow=max(de))
+		g_mean_mat[de, these_samples] <- matrix(rep(these_g_means, nsamples_per_condition), ncol=nsamples_per_condition, nrow=max(de))
 	}
 	g_mean_mat <- t(round(t(g_mean_mat)*lib_size))
 
@@ -58,6 +59,8 @@ generate_synthetic_pseudobulks_one_cell_type <- function(ngenes=100, de_prop=0.5
 #' @examples
 #' example_celltype_pseudobulks <- generate_synthetic_pseudobulks()
 #' dim(example_celltype_pseudobulks)
+#' @export
+
 generate_synthetic_pseudobulks <- function(ngenes=100, nconditions=2, nsamples_per_condition=3, ncell_types=3, dispersion_factor=0.2) {
 	all_pseudobulks <- c();
 	for (type in 1:ncell_types) {
@@ -93,8 +96,10 @@ generate_synthetic_pseudobulks <- function(ngenes=100, nconditions=2, nsamples_p
 #' @examples
 #' example_data <- generate_test_cellcounts()
 #' dim(example_data$counts)
-#` table(example_data$donors)
-#` table(example_data$celltypes)
+#' table(example_data$donors)
+#' table(example_data$celltypes)
+#' @export
+
 generate_test_cellcounts <- function() {
 	ndonor=3
 	ngene=20;
@@ -105,3 +110,39 @@ generate_test_cellcounts <- function() {
 	rownames(mat) <- paste("gene", 1:nrow(mat), sep="")
 	return(list(counts=mat, donors=donors, celltypes=celltypes))
 }
+
+#' Generate synthetic enrichments
+#'
+#' @description
+#' Generates a synthetic enrichments for testing other functions
+#' 
+#' @details
+#' Generates a set of random output formatted to look like the output from do_ora or do_fgsea.
+#' @param npathways number of pathway enrichments to generate
+#' @param ngenes number of total genes to use to populate enrichments.
+#' @return A list containing a dataframe of the same format as the output of do_ora or do_fgsea and a list of contributing genes.
+#' @examples
+#' example_enrichments <- generate_synthetic_enrichments(10)
+#' dim(example_enrichments$results)
+#' length(example_enrichments$contrib)
+#' @export
+
+generate_synthetic_enrichments <- function(npathways=10, ngenes=200){
+	all_genes <- paste("Gene", 1:ngenes, sep="")
+	contrib <- list() # genes contributing to each pathway
+	for (i in 1:npathways) {
+		contrib[[i]] <- unique(sample(all_genes, size=rpois(1, lambda=12), replace=TRUE))
+	}
+	intersection <- sapply(contrib, length)
+	res <- data.frame(pathway=paste("pathway",1:npathways,sep=""),
+			intersection=intersection,
+			log2fe=rnorm(npathways, sd=2),
+			FDR=exp(-abs(rnorm(npathways,mean=5, sd=10))))
+	rownames(res) <- res$pathway
+	names(contrib) <- res[,1]
+	return(list(results=res, contrib=contrib))
+}
+
+## Excessively Complicated
+#generate_synthetic_cellcounts <- function(ngenes=100, nclusters=10, avg_ncells_per_donor=100, ndonor=6){
+#	g_means <- rexp(ngenes, rate=1/100)

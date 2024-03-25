@@ -20,4 +20,6 @@ one with 15 cells/donor and one with 30 cells/donor to check for errors in metho
 \examples{
 example_data <- generate_test_cellcounts()
 dim(example_data$counts)
+table(example_data$donors)
+table(example_data$celltypes)
 }

@@ -45,6 +45,7 @@ ORA is performed with a hypergeometric test against a specified background and a
 }
 \examples{
 paths <- convert_GSEAObj_to_list(get_pathways("test"))
-rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
-dim(rich$results)[1] == length(rich$contrib) # TRUE
+l2fc <- rnorm(100, sd=2)
+names(l2fc) <- sample(unlist(paths), size=100)
+rich <- do_gsea(l2fc, paths, nperm=50) # nperm should be a minimum of 50000 for reproducible results
 }

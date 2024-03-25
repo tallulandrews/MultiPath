@@ -14,7 +14,7 @@ get_pseudobulk(
 )
 }
 \arguments{
-\item{mat}{a matrix of umi counts or normalized expression for each cell, supports sparse matrices}
+\item{mat}{a matrix of umi counts or normalized expression for each cell, genes=rows, cells=columns, supports sparse matrices}
 
 \item{clusters}{a vector of cluster or cell-type labels for each cell.}
 
@@ -39,9 +39,9 @@ Note: to avoid issues retreiving sample & cell-type IDs from the output column n
 }
 \examples{
   example_data <- generate_test_cellcounts()
-  test1 <- get_pseudobulk(tmp$counts, clusters=tmp$celltypes, donors=tmp$donors)
+  test1 <- get_pseudobulk(example_data$counts, clusters=example_data$celltypes, donors=example_data$donors)
   dim(test1) # should be 20 x 6
-  test2 <- get_pseudobulk(tmp$counts, clusters=tmp$celltypes, donors=tmp$donors, trim=0)
+  test2 <- get_pseudobulk(example_data$counts, clusters=example_data$celltypes, donors=example_data$donors, trim=0)
   dim(test2) # should be 20 x 9
   sample <- sapply(strsplit(colnames(test2), "_"), function(x){x[[2]]})
   cell_type <- sapply(strsplit(colnames(test2), "_"), function(x){x[[1]]})
