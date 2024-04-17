@@ -227,6 +227,13 @@ select_term <- function(out, terms, verbose=FALSE, prioritize.signaling=TRUE) {
 
 # select one representative for each group of overlapping terms
 condense_terms <- function(out, equivalent=0.5, verbose=FALSE, prioritize.signaling=TRUE) {
+	if (is.null(out)) {
+		warning("Warning: No pathways provided to condense_terms.")
+		return(out);	
+	}
+	if(nrow(out$result) == 1) {
+		return(out)
+	}
 	overlaps <- get_overlaps(out)
 	groups <- cluster_overlaps(overlaps, equivalent=equivalent, plot.result=verbose)
 	non_unique <- names(table(groups))[table(groups)>1]
