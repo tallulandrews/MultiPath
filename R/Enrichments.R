@@ -59,6 +59,7 @@ do_gsea <- function(scored_genes, pathways, fdr=0.05, min.term.size=15, max.term
 #' @param fdr the FDR threshold used to filter output.
 #' @param min.term.size pathways must have at least this number of genes in the background list of genes to be tested.
 #' @param max.term.size pathways must have fewer than this number of genes in the background list of genes to be tested.
+#' @param include.underrepresented whether to include pathways underrepresented among the provided genes
 #' @return A list containing two items:
 #' results = a dataframe containing the pathway name, number of query genes in the pathway (intersection), log2foldenrichment, FDR
 #' contrib = a list of genes found in the intersection between this pathway and the query gene set. 
@@ -67,7 +68,7 @@ do_gsea <- function(scored_genes, pathways, fdr=0.05, min.term.size=15, max.term
 #' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 #' dim(rich$results)[1] == length(rich$contrib) # TRUE
 #' @export
-do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, max.term.size=1000){
+do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, max.term.size=1000, include.underrepresented=FALSE){
 	# Filter Pathways
 	tmp <- names(pathways)
 	pathways <- intersectToList(pathways, background) 
@@ -93,7 +94,11 @@ do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, 
 	fdr_res <- stats::p.adjust(p, method="fdr")
 
 	# Generate nice results
-	keep <- fdr_res < fdr
+	if (include.underrepresented) {
+		keep <- fdr_res < fdr
+	} else {
+		keep <- fdr_res < fdr & ( (x/k) > (m/n_background) )
+	}
 	if (sum(keep) == 0) {warning("Warning:No significant enrichments"); return();}
 	pathways <- pathways[keep]
 	contrib_genes <- intersectToList(pathways, sig_genes)
