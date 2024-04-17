@@ -6,6 +6,7 @@
 #' @details
 #' Selects the top pathways from each set of enrichment results. Then aggregates the significance and enrichment scores for each of the selected pathways across all enrichment results.  
 #' @param list_of_rich a list of pathway enrichments for a single DE test obtained from do_ora or do_fgsea. All enrichments should be calculated using either do_ora or do_fgsea.
+#' @param pathways a vector of pathway names of pathways to be plot.
 #' @param ntop number of pathways to select from each enrichement results.
 #' @param colors a vector of colors for the heatmap
 #' @param stars a boolean for whether to include stars to indicate significance. 
@@ -18,31 +19,36 @@
 #' @param cluster_cols whether to cluster the columns of the heatmap or not
 #' @param plot.result whether to make the plot or just calculate the summarized results.
 #' @param both.dir whether to select the ntop pathways both up & down or just the ntop based on pvalue regardless of direction 
+#' @return invisibly the data matrix and p value matrix used to make the heatmap (as a list)
 #' @examples
 #' list_of_rich <- lapply(rpois(5, lambda=10), generate_synthetic_enrichments, ngenes=100)
 #' names(list_of_rich) <- paste("celltype", 1:length(list_of_rich), sep="")
 #' plot_enrichments_heatmap(list_of_rich)
 #' @export
 
-plot_enrichments_heatmap <- function(list_of_rich, ntop=5, colors=grDevices::colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=TRUE, stars.col="white", remove.prefix=FALSE, prefix.delim="_", log.scale=FALSE, bounds=NULL, cluster_rows=TRUE, cluster_cols=FALSE, plot.result=TRUE, both.dir=FALSE) {
+plot_enrichments_heatmap <- function(list_of_rich, pathways=NULL, ntop=5, colors=grDevices::colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=TRUE, stars.col="white", remove.prefix=TRUE, prefix.delim="_", log.scale=FALSE, bounds=NULL, cluster_rows=TRUE, cluster_cols=FALSE, plot.result=TRUE, both.dir=FALSE) {
 	# Collect pathways
 	all_pathways <- c();
-	#pathway_origin <- c();
-	for (i in names(list_of_rich)) {
-		paths <- list_of_rich[[i]]$results
-		if (nrow(paths) == 0) {next;}
-		paths <- paths[order(paths$FDR),]
-		if (both.dir) {
-			n_up <- min(nrow(paths[paths[,3] > 0,]), ntop)
-			all_pathways <- c(all_pathways, paths[paths[,3] > 0,"pathway"][1:n_up])
-			n_dn <- min(nrow(paths[paths[,3] < 0,]), ntop)
-			all_pathways <- c(all_pathways, paths[paths[,3] < 0,"pathway"][1:n_dn])
+	if (!is.null(pathways)) {
+		all_pathways = pathways
+	} else {
+		#pathway_origin <- c();
+		for (i in names(list_of_rich)) {
+			paths <- list_of_rich[[i]]$results
+			if (nrow(paths) == 0) {next;}
+			paths <- paths[order(paths$FDR),]
+			if (both.dir) {
+				n_up <- min(nrow(paths[paths[,3] > 0,]), ntop)
+				all_pathways <- c(all_pathways, paths[paths[,3] > 0,"pathway"][1:n_up])
+				n_dn <- min(nrow(paths[paths[,3] < 0,]), ntop)
+				all_pathways <- c(all_pathways, paths[paths[,3] < 0,"pathway"][1:n_dn])
 
-		} else {
-			n <- min(nrow(paths), ntop)
-			all_pathways <- c(all_pathways, paths$pathway[1:n])
+			} else {
+				n <- min(nrow(paths), ntop)
+				all_pathways <- c(all_pathways, paths$pathway[1:n])
+			}
+			#pathway_origin <- c(pathway_origin, rep(i, n))
 		}
-		#pathway_origin <- c(pathway_origin, rep(i, n))
 	}
 	# remove duplicates
 	dups <- duplicated(all_pathways)
@@ -51,37 +57,37 @@ plot_enrichments_heatmap <- function(list_of_rich, ntop=5, colors=grDevices::col
 
 	# Generate data for heatmap	
 	heat_data_all <- generate_heatmap_data(list_of_rich, all_pathways)
-	heat_data <- heat_data_all$heat_data
-	heat_pvals <- heat_data_all$heat_pvals
+	heat_data <- heat_data_all$scores
+	heat_pvals <- heat_data_all$pvalues
 
 	# Tidy up pathway names.
 	if (plot.result) {
-		tags=NA
+		db=NA
 		# add annotation for origin of the pathways.
 		# anno <- data.frame(origin=pathway_origin)
 		# No i don't think this is that useful since there are duplicates that we just remove above...
 		if (remove.prefix) {
-		# Convert removed tags to a colour label
-			tags <- sapply(strsplit(all_pathways, prefix.delim), function(x){x[[1]]})
+		# Convert removed db tags to a colour label
+			db <- sapply(strsplit(all_pathways, prefix.delim), function(x){x[[1]]})
 			all_pathway_names <- sub(paste0("^[^",prefix.delim,"]*",prefix.delim, sep=""), "", all_pathways)
-			anno_row <- data.frame(tags); rownames(anno_row) <- all_pathways;
-			rownames(heat_data_all$heat_data) <- all_pathway_names
-			plot_heatmap(heat_data_all$heat_data, heat_data_all$heat_pvals, 
+			anno_row <- data.frame(db); rownames(anno_row) <- all_pathway_names;
+			rownames(heat_data) <- all_pathway_names
+			plot_heatmap(heat_data, heat_pvals, 
 					log.scale=log.scale, bounds=bounds, colors=colors, 
 					stars=stars, stars.col=stars.col,
 					cluster_rows=cluster_rows, cluster_cols=cluster_cols, 
 					annotation_row = anno_row, annotation_col = NA)
 		} else {
 			all_pathway_names <- all_pathways
-			rownames(heat_data_all$heat_data) <- all_pathway_names
-			plot_heatmap(heat_data_all$heat_data, heat_data_all$heat_pvals, 
+			rownames(heat_data) <- all_pathway_names
+			plot_heatmap(heat_data, heat_pvals, 
 					log.scale=log.scale, bounds=bounds, colors=colors, 
 					stars=stars, stars.col=stars.col,
 					cluster_rows=cluster_rows, cluster_cols=cluster_cols, 
 					annotation_row = NA, annotation_col = NA)
 		}
 	}
-	return(heat_data)
+	invisible(heat_data_all)
 }
 
 
@@ -116,7 +122,7 @@ generate_heatmap_data <- function(list_of_rich, pathways) {
 	for (this_i in names(list_of_rich)) {
 		these_rich <- list_of_rich[[this_i]]
 		scores <- these_rich$results[match(pathways, these_rich$results$pathway),3]
-		pvals <- these_rich$results[match(pathways, these_rich$results$pathway),"fdr"]
+		pvals <- these_rich$results[match(pathways, these_rich$results$pathway),"FDR"]
 		heat_toplot[,this_i] <- scores
 		heat_pvals[,this_i] <- pvals
 	}
@@ -146,7 +152,7 @@ generate_heatmap_data <- function(list_of_rich, pathways) {
 #' @param cluster_cols whether to cluster & rearrange the columns of the heatmap
 #' @param annotation_row a matrix of annotations for the rows of the heatmaps (see:pheatmap)
 #' @param annotation_col a matrix of annotations for the columns of the heatmaps (see:pheatmap)
-#' @return A matrix of overlap scores for all pairs of pathways.
+#' @return Nothing.
 #' @examples
 #' heat_data <- matrix(rnorm(100), ncol=10)
 #' rownames(heat_data) <- paste("pathway", 1:nrow(heat_data), sep="")
@@ -171,13 +177,13 @@ plot_heatmap <- function(data, pvals=NULL, log.scale=FALSE, bounds=NULL, colors=
 	if (stars) {
 		if(is.null(pvals)) {stop("Error: you must provide an adjusted p-value matrix to plot stars.")}
 		if(!identical(dim(data), dim(pvals))) {stop("Error: pvals must be the same dimensions as data.")}
-		start_mat[pvals < 0.05] <- "*"
-		start_mat[pvals < 0.0005] <- "**"
-		start_mat[pvals < 0.000005] <- "***"
+		star_mat[pvals < 0.05] <- "*"
+		star_mat[pvals < 0.0005] <- "**"
+		star_mat[pvals < 0.000005] <- "***"
 	}
-
+	
 	pheatmap::pheatmap(data, color=colors, 
-		breaks=seq(from=bounds[1], to=bounds[2], length=length(colors)+1),
+		breaks=seq(from=bounds[1], to=bounds[2]+1, length=length(colors)+1),
 		display_numbers=star_mat, number_color=stars.col,
 		cluster_rows=cluster_rows, cluster_cols=cluster_cols, 
 		annotation_row=annotation_row, annotation_col=annotation_col)
