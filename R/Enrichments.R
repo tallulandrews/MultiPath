@@ -57,8 +57,8 @@ do_gsea <- function(scored_genes, pathways, fdr=0.05, min.term.size=15, max.term
 #' @param pathways a list of gene sets or pathways to test for enrichment. The list must be named by the pathway name and contain vectors of gene names for the genes in that gene set.
 #' @param background a vector of gene games to be used as the background.
 #' @param fdr the FDR threshold used to filter output.
-#' @param min.term.size pathways must have at least this number of genes to be tested.
-#' @param max.term.size pathways must have fewer than this number of genes to be tested.
+#' @param min.term.size pathways must have at least this number of genes in the background list of genes to be tested.
+#' @param max.term.size pathways must have fewer than this number of genes in the background list of genes to be tested.
 #' @return A list containing two items:
 #' results = a dataframe containing the pathway name, number of query genes in the pathway (intersection), log2foldenrichment, FDR
 #' contrib = a list of genes found in the intersection between this pathway and the query gene set. 
@@ -67,16 +67,17 @@ do_gsea <- function(scored_genes, pathways, fdr=0.05, min.term.size=15, max.term
 #' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 #' dim(rich$results)[1] == length(rich$contrib) # TRUE
 #' @export
-do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=15, max.term.size=1000){
+do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, max.term.size=1000){
 	# Filter Pathways
+	tmp <- names(pathways)
+	pathways <- intersectToList(pathways, background) 
+	names(pathways) <- tmp
 	path_size <- sapply(pathways, length)
 	pathways <- pathways[path_size < max.term.size & path_size > min.term.size]
 
 	# Run hypergeometric test
 	sig_genes <- intersect(sig_genes, background) # ensure only considering genes that exist in the background
 	path_names <- names(pathways)
-	sig_genes <- intersect(sig_genes, background)
-	pathways <- intersectToList(pathways, background) 
 	names(pathways) <- path_names
 
 	n_background <- length(background)
@@ -97,7 +98,7 @@ do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=15, 
 	pathways <- pathways[keep]
 	contrib_genes <- intersectToList(pathways, sig_genes)
 	names(contrib_genes) <- names(pathways)
-	score <- log2((x[keep]/k)/(m[keep]/n_background))
+	score <- log2(((x[keep]+0.1)/k)/(m[keep]/n_background)) # Add the 0.1 to avoid -Inf
 	res = data.frame(pathway=names(pathways), intersection=x[keep], log2fe=score, FDR=fdr_res[keep]) 
 	return(list(results=res, contrib=contrib_genes))
 }
