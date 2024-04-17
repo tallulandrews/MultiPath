@@ -70,6 +70,10 @@ plot_enrichments_heatmap <- function(list_of_rich, pathways=NULL, ntop=5, colors
 		# Convert removed db tags to a colour label
 			db <- sapply(strsplit(all_pathways, prefix.delim), function(x){x[[1]]})
 			all_pathway_names <- sub(paste0("^[^",prefix.delim,"]*",prefix.delim, sep=""), "", all_pathways)
+			while(sum(duplicated(all_pathway_names)) > 0) {
+				all_pathway_names[duplicated(all_pathway_names)] <- paste0(all_pathway_names[duplicated(all_pathway_names)], "1")
+			}
+		
 			anno_row <- data.frame(db); rownames(anno_row) <- all_pathway_names;
 			rownames(heat_data) <- all_pathway_names
 			plot_heatmap(heat_data, heat_pvals, 
