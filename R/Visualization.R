@@ -7,6 +7,7 @@
 #' Selects the top pathways from each set of enrichment results. Then aggregates the significance and enrichment scores for each of the selected pathways across all enrichment results.  
 #' @param list_of_rich a list of pathway enrichments for a single DE test obtained from do_ora or do_fgsea. All enrichments should be calculated using either do_ora or do_fgsea.
 #' @param pathways a vector of pathway names of pathways to be plot.
+#' @param pathways.names a vector of alias names for each pathway to be plot - used to shorted long pathway names when using predetermined pathways, overrides remove.prefix.
 #' @param ntop number of pathways to select from each enrichement results.
 #' @param colors a vector of colors for the heatmap
 #' @param stars a boolean for whether to include stars to indicate significance. 
@@ -26,11 +27,16 @@
 #' plot_enrichments_heatmap(list_of_rich)
 #' @export
 
-plot_enrichments_heatmap <- function(list_of_rich, pathways=NULL, ntop=5, colors=grDevices::colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=TRUE, stars.col="white", remove.prefix=TRUE, prefix.delim="_", log.scale=FALSE, bounds=NULL, cluster_rows=TRUE, cluster_cols=FALSE, plot.result=TRUE, both.dir=FALSE) {
+plot_enrichments_heatmap <- function(list_of_rich, pathways=NULL, pathways.names=NULL, ntop=5, colors=grDevices::colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=TRUE, stars.col="white", remove.prefix=TRUE, prefix.delim="_", log.scale=FALSE, bounds=NULL, cluster_rows=TRUE, cluster_cols=FALSE, plot.result=TRUE, both.dir=FALSE) {
 	# Collect pathways
 	all_pathways <- c();
+	all_pathways_names <- c();
 	if (!is.null(pathways)) {
 		all_pathways = pathways
+		all_pathway_names = pathways.names
+		if (is.null(all_pathway_names)) {
+			all_pathway_names = all_pathways
+		}
 	} else {
 		#pathway_origin <- c();
 		for (i in names(list_of_rich)) {
@@ -66,7 +72,7 @@ plot_enrichments_heatmap <- function(list_of_rich, pathways=NULL, ntop=5, colors
 		# add annotation for origin of the pathways.
 		# anno <- data.frame(origin=pathway_origin)
 		# No i don't think this is that useful since there are duplicates that we just remove above...
-		if (remove.prefix) {
+		if (remove.prefix & is.null(pathways.names)) {
 		# Convert removed db tags to a colour label
 			db <- sapply(strsplit(all_pathways, prefix.delim), function(x){x[[1]]})
 			all_pathway_names <- sub(paste0("^[^",prefix.delim,"]*",prefix.delim, sep=""), "", all_pathways)
@@ -82,7 +88,6 @@ plot_enrichments_heatmap <- function(list_of_rich, pathways=NULL, ntop=5, colors
 					cluster_rows=cluster_rows, cluster_cols=cluster_cols, 
 					annotation_row = anno_row, annotation_col = NA)
 		} else {
-			all_pathway_names <- all_pathways
 			rownames(heat_data) <- all_pathway_names
 			plot_heatmap(heat_data, heat_pvals, 
 					log.scale=log.scale, bounds=bounds, colors=colors, 
