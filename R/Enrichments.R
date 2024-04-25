@@ -74,6 +74,7 @@ do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, 
 	pathways <- intersectToList(pathways, background) 
 	names(pathways) <- tmp
 	path_size <- sapply(pathways, length)
+	if (max(path_size) == 0) {stop("Error:No overlap between pathways and background. Please check your genes are stored as appropriate gene symbols.")}
 	pathways <- pathways[path_size < max.term.size & path_size > min.term.size]
 
 	# Run hypergeometric test
