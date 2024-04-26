@@ -118,22 +118,38 @@ do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, 
 #' 
 #' @details
 #' Overlaps are calculated as the length of the intersection divided by the total genes in the larger pathway.
+#' "Max" = number of genes in the largest pathway. <- default
+#' "Min" = number of genes in the smallest pathway.
+#' "Union" = number of genes in the union of the two pathways.
 #' @param out a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea
+#' @param denom one of "max", "min" or "avg" determining how the denominator is calculated (See: details)
 #' @return A matrix of overlap scores for all pairs of pathways.
 #' @examples
 #' paths <- convert_GSEAObj_to_list(get_pathways("test"))
 #' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 #' overlaps <- get_overlaps(rich)
 #' @export
-get_overlaps <- function(out) {
-	total_genes <- sapply(out$contrib, length)
-	olap <- lapply(out$contrib, function(x) {sapply(intersectToList(out$contrib, x), length)})
-	olap <- matrix(unlist(olap), ncol=length(out$contrib))
+get_overlaps <- function(out, denom=c("max", "min", "union")) {
+#	total_genes <- sapply(out$contrib, length)
+#	olap <- lapply(out$contrib, function(x) {sapply(intersectToList(out$contrib, x), length)})
+#	olap <- matrix(unlist(olap), ncol=length(out$contrib))
+#	rownames(olap) <- colnames(olap) <- names(out$contrib)
+
+	# Rcpp-ized
+	olap <- overlapsListvsList(out$contrib, out$contrib)
 	rownames(olap) <- colnames(olap) <- names(out$contrib)
 
 	# get denominator - size of the largest pathway
 	tab <- cbind(rep(total_genes, length(total_genes)), rep(total_genes, each=length(total_genes)))
-	denom <- matrix(apply(tab, 1, max), ncol=length(total_genes))
+	if (denom[1] == "max") {
+		denom <- matrix(apply(tab, 1, max), ncol=length(total_genes))
+	} else if (denom[1] == "min") {
+		denom <- matrix(apply(tab, 1, min), ncol=length(total_genes))
+	} else if (denom[1] == "union") {
+		denom <- matrix(apply(tab, 1, max), ncol=length(total_genes)) + 
+			 matrix(apply(tab, 1, min), ncol=length(total_genes)) -
+			 olap
+	}
 
 	return(olap/denom)
 }
@@ -241,6 +257,71 @@ condense_terms <- function(out, equivalent=0.5, verbose=FALSE, prioritize.signal
 	keep <- names(groups)[!groups %in% non_unique]
 	for (g in non_unique) {
 		chosen_term <- select_term(out, names(groups)[groups==g], verbose=verbose, prioritize.signaling=prioritize.signaling)
+		keep <- c(keep, chosen_term)
+	}
+	new_out <- list(results=out$results[out$results$pathway %in% keep,], contrib=out$contrib[names(out$contrib) %in% keep])
+	return(new_out)
+}
+
+#' Condense Terms Multi
+#'
+#' @description
+#' Removes synonymous pathways from multiple sets of output pathway enrichments
+#' 
+#' @details 
+#' Combines multiple sets of pathways enrichments for different cell-types / conditions 
+#' that have not yet been condensed. Then finds overlaps between all pathway enrichments. 
+#' Finally identifies a since consensus pathway to represent each cluster of synonymous terms.
+#' 
+#' Consensus pathway is defined as: ....
+#' See: \code{cluster_overlaps} for details of pathway clustering.
+#' See: \code{get_oberlaps} for deatils of overlap calculation.
+#'
+#' @param out_list a list of pathway enrichments for multiple DE tests obtained from do_ora or do_fgsea
+#' @param equivalent a scalar value for the equivalence threshold. (see: \code{get_overlaps})
+#' @param verbose boolean, whether to print data table used as the basis for selecting representative terms.
+#' @return The same structured list of pathway enrichments but with redundant terms removed.
+#' @examples
+#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#' rich <- condense_terms(rich)
+#' @export
+
+# select one representative for each group of overlapping terms
+condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
+	if (is.null(out)) {
+		warning("Warning: No pathways provided to condense_terms.")
+		return(out);	
+	}
+	if(length(out) == 1) {
+		return(condense_terms(out, equivalent=equivalent, verbose=verbose))
+	}
+	# merge all the enrichments into a single thing
+	merged_enrichments <- list(results=c(), contrib=list())
+	for (i in 1:length(out)) {
+		this_name <- names(out)[i]
+		out[[i]]$results$condition <- this_name
+		merged_enrichments$results <- rbind(merged_enrichments$results, out[[i]]$results)
+		names(out[[i]]$contrib) <- paste(this_name, names(out[[i]]$contrib), sep=";=")
+		merged_enrichments$contrib <- append( merged_enrichments$contrib, out[[i]]$contrib)
+	}
+	# Identify equivalent terms based on clustering of overlaps between them
+	overlaps <- get_overlaps(merged_enrichments)
+	groups <- cluster_overlaps(overlaps, equivalent=equivalent, plot.result=verbose)
+
+	# Identify unique terms, these we keep as is.
+	non_unique <- names(table(groups))[table(groups)>1]
+	keep <- names(groups)[!groups %in% non_unique]
+	
+	# For each non-unique term, we need to identify a consensus term
+	# Criteria: 
+	# - Should be found in all of the conditions that the group of pathways is found in
+	# - Should be the most significant on average across all the conditions.
+	for (g in non_unique) {
+		synonymous_terms <- names(groups)[groups==g]
+		# Number of conditions each term is found in
+
+		chosen_term <- select_term(out, names(groups)[groups==g], verbose=verbose)
 		keep <- c(keep, chosen_term)
 	}
 	new_out <- list(results=out$results[out$results$pathway %in% keep,], contrib=out$contrib[names(out$contrib) %in% keep])
