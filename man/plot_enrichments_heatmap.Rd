@@ -6,12 +6,14 @@
 \usage{
 plot_enrichments_heatmap(
   list_of_rich,
+  pathways = NULL,
+  pathways.names = NULL,
   ntop = 5,
   colors = (grDevices::colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy",
     "purple", "magenta"))))(100),
   stars = TRUE,
   stars.col = "white",
-  remove.prefix = FALSE,
+  remove.prefix = TRUE,
   prefix.delim = "_",
   log.scale = FALSE,
   bounds = NULL,
@@ -23,6 +25,10 @@ plot_enrichments_heatmap(
 }
 \arguments{
 \item{list_of_rich}{a list of pathway enrichments for a single DE test obtained from do_ora or do_fgsea. All enrichments should be calculated using either do_ora or do_fgsea.}
+
+\item{pathways}{a vector of pathway names of pathways to be plot.}
+
+\item{pathways.names}{a vector of alias names for each pathway to be plot - used to shorted long pathway names when using predetermined pathways, overrides remove.prefix.}
 
 \item{ntop}{number of pathways to select from each enrichement results.}
 
@@ -47,6 +53,9 @@ plot_enrichments_heatmap(
 \item{plot.result}{whether to make the plot or just calculate the summarized results.}
 
 \item{both.dir}{whether to select the ntop pathways both up & down or just the ntop based on pvalue regardless of direction}
+}
+\value{
+invisibly the data matrix and p value matrix used to make the heatmap (as a list)
 }
 \description{
 Summarizes a set of pathway enrichments as a heatmap.

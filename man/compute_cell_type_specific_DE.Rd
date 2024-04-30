@@ -4,7 +4,12 @@
 \alias{compute_cell_type_specific_DE}
 \title{Cell-type specific DE}
 \usage{
-compute_cell_type_specific_DE(pseudobulks, design_matrix, fdr = 0.05)
+compute_cell_type_specific_DE(
+  pseudobulks,
+  design_matrix,
+  fdr = 0.05,
+  cell.types = NULL
+)
 }
 \arguments{
 \item{pseudobulks}{a pseudobulk matrix created from get_pseudobulks}
@@ -12,6 +17,8 @@ compute_cell_type_specific_DE(pseudobulks, design_matrix, fdr = 0.05)
 \item{design_matrix}{a design matrix created with model.matrix}
 
 \item{fdr}{False discovery rate threshold used to filter DE genes}
+
+\item{cell.types}{a vector of cell type names to specify a which cell-type to run on (default = all)}
 }
 \value{
 a list of dataframes containing DE results for each cell-type

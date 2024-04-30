@@ -7,7 +7,7 @@
 get_pseudobulk(
   mat,
   clusters,
-  donors,
+  individual,
   method = c("sum", "mean"),
   trim = 10,
   refactor = TRUE
@@ -18,7 +18,7 @@ get_pseudobulk(
 
 \item{clusters}{a vector of cluster or cell-type labels for each cell.}
 
-\item{donors}{a vector of donor or sample labels for each cell.}
+\item{individual}{a vector of patient or sample labels for each cell.}
 
 \item{method}{whether to add up or average the expression in each cell-type x sample group of cell.}
 

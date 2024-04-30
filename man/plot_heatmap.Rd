@@ -43,7 +43,7 @@ plot_heatmap(
 \item{annotation_col}{a matrix of annotations for the columns of the heatmaps (see:pheatmap)}
 }
 \value{
-A matrix of overlap scores for all pairs of pathways.
+Nothing.
 }
 \description{
 Plots a heatmap of a provided enrichment score matrix.
