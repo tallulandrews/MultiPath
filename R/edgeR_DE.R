@@ -9,6 +9,7 @@
 #' @param pseudobulks a pseudobulk matrix created from get_pseudobulks
 #' @param design_matrix a design matrix created with model.matrix
 #' @param fdr False discovery rate threshold used to filter DE genes
+#' @param cell.types a vector of cell type names to specify a which cell-type to run on (default = all)
 #' @return a list of dataframes containing DE results for each cell-type
 #' @examples
 #' example_celltype_pseudobulks <- generate_synthetic_pseudobulks()
@@ -17,14 +18,22 @@
 #' design <- model.matrix(~conditions)
 #' de <- compute_cell_type_specific_DE(example_celltype_pseudobulks, design)
 #' @export
-compute_cell_type_specific_DE <- function(pseudobulks, design_matrix, fdr=0.05) {
+compute_cell_type_specific_DE <- function(pseudobulks, design_matrix, fdr=0.05, cell.types=NULL) {
 	rownames(design_matrix) <- colnames(pseudobulks)
 	sample <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[2]]}) # correct order
 	cell_type <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[1]]}) # correct order
 	all_outs <- list()
-	for (type in cell_type) {
+	if (is.null(cell.types)) {
+		cell.types <-  unique(cell_type)
+	}
+	for (type in cell.types) {
+		print(type)
+		if (sum(cell_type==type) < 2) {
+			warning(paste("Warning: DE for", type, "could not be computed because fewer than 2 samples contain this type."))
+			next;
+		}
 		dat <- pseudobulks[,cell_type==type]
-		these_samples <- sample[cell_type==type]
+		these_samples <- colnames(pseudobulks[,cell_type==type])
 		# Create the design matrix for this cell-type
 		design <- design_matrix[rownames(design_matrix) %in% these_samples,]
 		if (Matrix::rankMatrix(design)[1] < ncol(design)) {
@@ -57,11 +66,11 @@ compute_cell_type_specific_DE <- function(pseudobulks, design_matrix, fdr=0.05) 
 #' de <- compute_cell_type_specific_DE_parallel(example_celltype_pseudobulks, design)
 #' @export
 compute_cell_type_specific_DE_parallel <- function(pseudobulks, design_matrix, fdr=0.05, n.cores=1) {
-	sample <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[1]]})
-	cell_type <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[2]]})
+	samples <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[2]]})
+	cell_type <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[1]]})
 	all_outs <- foreach::foreach( type=cell_type) %do% {
 		dat <- pseudobulks[,cell_type==type]
-		these_samples <- sample[cell_type==type]
+		these_samples <- samples[cell_type==type]
 		# Create the design matrix for this cell-type
 		design <- design_matrix[rownames(design_matrix) %in% these_samples,]
 		if (Matrix::rankMatrix(design)[1] < ncol(design)) {
@@ -110,7 +119,7 @@ one_cell_type_DE <- function(dat, design, fdr=0.05) {
 	for (i in 2:ncol(design)) {
 		contrast_vec <- rep(0, ncol(design))
 		contrast_vec[i] <- 1
-		de <- edgeR::topTags(edgeR::glmQLFTest(fit, contrast=contrast_vec, n=nrow(dat), p.value=fdr))
+		de <- edgeR::topTags(edgeR::glmQLFTest(fit, contrast=contrast_vec), n=nrow(dat), p.value=fdr)
 		de <- de$table
 		de$Coefficient <- colnames(design)[i]
 		de$Gene <- rownames(de)
