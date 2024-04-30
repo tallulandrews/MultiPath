@@ -264,7 +264,7 @@ trim_for_pseudobulks <- function(clusters, individual, nmin=10) {
 #' 
 #' @param mat a matrix of umi counts or normalized expression for each cell, genes=rows, cells=columns, supports sparse matrices
 #' @param clusters a vector of cluster or cell-type labels for each cell.
-#' @param donors a vector of donor or sample labels for each cell.
+#' @param individual a vector of patient or sample labels for each cell.
 #' @param method whether to add up or average the expression in each cell-type x sample group of cell.
 #' @param trim cell-type x sample groups with fewer than this many cells will not be included in the pseudobulk matrix
 #' @param refactor whether to factor the clusters & donors vectors - recommended if trimming.
@@ -278,34 +278,34 @@ trim_for_pseudobulks <- function(clusters, individual, nmin=10) {
 #'   sample <- sapply(strsplit(colnames(test2), "_"), function(x){x[[2]]})
 #'   cell_type <- sapply(strsplit(colnames(test2), "_"), function(x){x[[1]]})
 #' @export
-get_pseudobulk <- function(mat, clusters, donors, method=c("sum", "mean"), trim=10, refactor=TRUE) {
+get_pseudobulk <- function(mat, clusters, individual, method=c("sum", "mean"), trim=10, refactor=TRUE) {
 	#avoid naming issues - we use underscores to sepearate cluster vs donor in pseudobulk column names
 	clusters <- sub("_", "-", clusters)
-	donor <- sub("_", "-", donors)
+	individual <- sub("_", "-", individual)
 
 	# Remove cluster-donor pairs where there are too few cells to get a reliable expression profile
 	if (trim > 0) {
-		to.exclude <- trim_for_pseudobulks(clusters, donors, nmin=trim)
+		to.exclude <- trim_for_pseudobulks(clusters, individual, nmin=trim)
 		mat <- mat[,!to.exclude]
 		clusters <- clusters[!to.exclude]
-		donors <- donors[!to.exclude]
+		individual <- individual[!to.exclude]
 	}
 	if (refactor) {
 		clusters <- factor(clusters)
-		donors <- factor (donors)
+		individual <- factor (individual)
 	}
 
 	# Subset "mat" to each pair of donors & clusters and add up the umi counts for all the cells
         c <- split(seq(ncol(mat)), clusters);
         # expression per donor in this cluster
         clust_expr <- lapply(c, function(clust) {
-                d_expr <- group_rowmeans(mat[,clust], donors[clust], type=method[1]);
+                d_expr <- group_rowmeans(mat[,clust], individual[clust], type=method[1]);
                 if(is.null(dim(d_expr))) {
                         l <- sapply(d_expr, length)
                         keep <- which(l == nrow(mat))
-                        d_expr <- matrix(d_expr[[keep]], ncol=length(keep), byrow=FALSE);
+                        d_expr <- matrix(unlist(d_expr[keep]), ncol=length(keep), byrow=FALSE);
                         rownames(d_expr) <- rownames(mat);
-                        colnames(d_expr) <- paste(clusters[clust[1]], levels(donors)[keep], sep="_")
+                        colnames(d_expr) <- paste(clusters[clust[1]], levels(individual)[keep], sep="_")
                 } else {
                         colnames(d_expr) <- paste(clusters[clust[1]], colnames(d_expr), sep="_")
                 }
