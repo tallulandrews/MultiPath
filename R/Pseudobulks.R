@@ -338,8 +338,10 @@ get_pseudobulk <- function(mat, clusters, individual, method=c("sum", "mean"), t
 #' @param mat a matrix or sparse matrix of numeric data, such as a gene expression matrix.
 #' @param rownames_dups a vector of rownames for `mat` that contains duplicates.
 #' @param method which approach to use to aggregate data across duplicated rows (see:Details).
+#' @param verbose whether to print each duplicated rowname as it is being fixed.
 #' @return a matrix with the provided rownames but without duplicates.
 #' @examples
+#' # Normal Usage
 #' example_data <- generate_test_cellcounts()$counts
 #' gene_ids <- sample(paste("gene", 1:10, sep=""), 20, replace=TRUE)
 #' deduped <- remove_duplicate_rows(example_data, gene_ids, method="max")
@@ -348,31 +350,49 @@ get_pseudobulk <- function(mat, clusters, individual, method=c("sum", "mean"), t
 #' dim(deduped) == dim(total) # TRUE
 #' dim(deduped) == dim(avg) # TRUE
 #' dim(deduped)[1] == length(unique(gene_ids)) # TRUE
+#' 
+#' # Test cases
+#' expr_mat <- matrix(rnorm(100), nrow=10)
+#' gene_names <- c("A", "B", "B", "B", "C",
+#'                 "C", "D", "E", "F", "G")
+#' fix_mat <- remove_duplicate_rows(expr_mat, gene_names, method="max")
+#' fix_mat <- remove_duplicate_rows(expr_mat, gene_names, method="sum")
+#' fix_mat <- remove_duplicate_rows(expr_mat, gene_names, method="mean")
+#'
+#' require(Matrix)
+#' sparse <- expr_mat; sparse[sparse < 0] <- 0; sparse <- as(sparse, "dgCMatrix")
+#' fix_mat <- remove_duplicate_rows(sparse, gene_names, method="max")
+#' fix_mat <- remove_duplicate_rows(sparse, gene_names, method="sum")
+#' fix_mat <- remove_duplicate_rows(sparse, gene_names, method="mean")
 #' @export
-remove_duplicate_rows <- function(mat, rownames_dups, method=c("max", "sum", "mean")) {
+remove_duplicate_rows <- function(mat, rownames_dups, method=c("max", "sum", "mean"), verbose=TRUE) {
         rownames_dups <- as.character(rownames_dups)
-        for (g in unique(rownames_dups[duplicated(rownames_dups)])) {
-                print(paste(g, "is duplicated", sum(rownames_dups == g), "times"))
-                b_means <- rowMeans(mat)
-                to.remove <- which(rownames_dups == g)
+	b_means <- Matrix::rowMeans(mat)
+
+	to.remove_all <- rep(FALSE, nrow(mat));
+	       for (g in unique(rownames_dups[duplicated(rownames_dups)])) {
+                if (verbose) {
+                        print(paste(g, "is duplicated", sum(rownames_dups == g), "times"))
+                }
+                to.remove <- rownames_dups == g
                 if (method[1] == "max") {
                         top <- max(b_means[to.remove])
-                        to.remove <- rownames_dups == g & b_means < top
+                        to.remove <- to.remove & b_means < top
                 } else {
                         if (method[1] == "sum") {
-                                new_row <- colSums(mat[to.remove,])
+                                new_row <- Matrix::colSums(mat[to.remove,])
                         } else if (method[1] == "mean") {
-                                new_row <- colMeans(mat[to.remove,])
+                                new_row <- Matrix::colMeans(mat[to.remove,])
                         }
-                        mat <- rbind(mat, new_row)
-                        rownames_dups <- c(rownames_dups, g)
+                        replace <- which(to.remove == TRUE)[1];
+                        mat[replace,] <- new_row
+                        to.remove[replace] <- FALSE
                 }
-                mat <- mat[!to.remove,]
-                rownames_dups <- rownames_dups[!to.remove]
+                to.remove_all <- to.remove_all | to.remove
         }
-        final_is.dup <- duplicated(rownames_dups);
-        mat <- mat[!final_is.dup,]
-        rownames_dups <- rownames_dups[!final_is.dup]
+        if (sum(to.remove_all) != sum(duplicated(rownames_dups))) {print("Something is wrong!")}
+        mat <- mat[!to.remove_all,]
+        rownames_dups <- rownames_dups[!to.remove_all]
         rownames(mat) <- rownames_dups
         return(mat)
 }
