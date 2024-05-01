@@ -14,3 +14,30 @@ intersectToList <- function(lt, x) {
     .Call('_MultiPath_intersectToList', PACKAGE = 'MultiPath', lt, x)
 }
 
+#' overlapsListvsList
+#'
+#' This function intersects a list of string vectors with another list of string vectors.
+#' Outputs the number of items in the overlap between a pair of string vectors.
+#' Rows are vectors from lt1, columns are vectors from lt2
+#' adpated from: https://jokergoo.github.io/2023/04/05/speed-up-over-representation-enrichment-analysis/
+#'
+#' @param lt1 A list of vectors of strings
+#' @param lt2 A list of vectors of strings
+#' @return out a matrix[i,j] of integers overlaps between lt1[[i]] and lt2[[j]]
+#' @export
+overlapsListvsList <- function(lt1, lt2) {
+    .Call('_MultiPath_overlapsListvsList', PACKAGE = 'MultiPath', lt1, lt2)
+}
+
+#' charSort
+#'
+#' This function sorts a character vector
+#' adpated from: https://stackoverflow.com/questions/38654019/rcpp-sort-descending
+#'
+#' @param x A vector of strings
+#' @return The vector sorted alphabetically a->z
+#' @export
+charSort <- function(x) {
+    .Call('_MultiPath_charSort', PACKAGE = 'MultiPath', x)
+}
+
