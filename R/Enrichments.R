@@ -107,7 +107,7 @@ do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, 
 	score <- log2(((x[keep]+0.1)/k)/(m[keep]/n_background)) # Add the 0.1 to avoid -Inf
 	if (n_genes == 0) {
 		# Catch cases where no genes provided
-		log2fe <- rep(0, length(log2fe))
+		score <- rep(0, length(score))
 		fdr_res <- rep(1, length(fdr_res))
 		warning("Warning: no genes in query set")
 	}
