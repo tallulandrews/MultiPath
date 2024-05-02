@@ -297,7 +297,7 @@ condense_terms <- function(out, equivalent=0.5, verbose=FALSE, prioritize.signal
 condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 	separated_symbol = ";="
 	if (is.null(out)) {
-		warning("Warning: No pathways provided to condense_terms.")
+		warning("Warning: No pathways provided to condense_terms_multi.")
 		return(out);	
 	}
 	if(length(out) == 1) {
@@ -319,7 +319,8 @@ condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 	# Identify unique terms, these we keep as is.
 	non_unique <- names(table(groups))[table(groups)>1]
 	keep <- names(groups)[!groups %in% non_unique]
-	
+	tmp <- strsplit(keep, separated_symbol)
+	keep <- sapply(tmp, function(x){x[2]})	
 	# For each non-unique term, we need to identify a consensus term
 	# Criteria: 
 	# - Should be found in all of the conditions that the group of pathways is found in
@@ -342,8 +343,13 @@ condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 	new_out <- list()
 	for (i in 1:length(out)) {
 		this_name <- names(out)[i]
-		new_out[[this_name]] <- list(results=out[[i]]$results[out[[i]]$results$pathway %in% keep,], 
-					     contrib=out[[i]]$contrib[names(out[[i]]$contrib) %in% keep])
+		res <- out[[i]]$results
+		contrib <- out[[i]]$contrib
+		names(contrib) <- sapply(strsplit(names(contrib), separated_symbol), function(x){x[[2]]})
+
+		new_out[[this_name]] <- list(results=res[res$pathway %in% keep,], 
+					     contrib=contrib[names(contrib) %in% keep])
+		if (nrow(new_out[[this_name]]$results) != length(new_out[[this_name]]$contrib)) {warning("What? Something's wrong.")}
 	}
 	return(new_out)
 }
