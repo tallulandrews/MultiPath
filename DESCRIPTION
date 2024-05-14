@@ -4,13 +4,13 @@ Date: 2023-03-04
 Title: Multi-experiment pathway analysis and visualization
 Author: Tallulah Andrews <tallulandrews@gmail.com>
 Maintainer: Tallulah Andrews <tallulandrews@gmail.com>
-Depends: R (>= 4.1.2), numDeriv
-Imports: pheatmap, Matrix, msigdb, fgsea
+Depends: R (>= 4.1.2), knitr
+Imports: pheatmap, Matrix, msigdb, fgsea, Rcpp, edgeR, foreach
 Suggests: 
+LinkingTo: Rcpp
 VignetteBuilder: knitr
 biocViews: RNASeq, Sequencing, Transcriptomics, GeneExpression, Software, DifferentialExpression, DimensionReduction, FeatureExtraction
-Collate:
-Description: 
+Description: Calculates differentially expressed genes, and pathway enrichments for multiple cell-types in parallel then visualizes results across cell-types as a heatmap.
 URL: https://github.com/tallulandrews/MultiPath
 BugReports: https://github.com/tallulandrews/MultiPath/issues
 License: GPL (>=2)
