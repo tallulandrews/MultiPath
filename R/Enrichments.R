@@ -104,7 +104,8 @@ do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, 
 	pathways <- pathways[keep]
 	contrib_genes <- intersectToList(pathways, sig_genes)
 	names(contrib_genes) <- names(pathways)
-	score <- log2(((x[keep]+0.1)/k)/(m[keep]/n_background)) # Add the 0.1 to avoid -Inf
+	x[x==0] <- 1/n_background
+	score <- log2(((x[keep])/k)/(m[keep]/n_background)) # Add the 0.1 to avoid -Inf
 	if (n_genes == 0) {
 		# Catch cases where no genes provided
 		score <- rep(0, length(score))
