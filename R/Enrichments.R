@@ -33,9 +33,16 @@ do_gsea <- function(scored_genes, pathways, fdr=0.05, min.term.size=15, max.term
 	keep <- !is.na(rich$pval) & rich$padj < fdr
 	if (sum(keep) == 0) {warning("Warning:No significant enrichments"); return();}
 	
-	contrib_genes <- as.list(rich[,8][[1]])
+	#contrib_genes <- as.list(rich[,8][[1]]) # This doesn't work when in a package????
+	contrib_genes <- lapply(1:nrow(rich), function(x){unlist(rich[x,8])})
+	names(contrib_genes) <- rich$pathway
 	n_contrib <- sapply(contrib_genes, length)
 	
+	#print(length(rich$pathway))
+	#print(length(n_contrib))
+	#print(length(rich$NES))
+	#print(length(rich$padj))
+	#return(rich)
 	res = data.frame(pathway=rich$pathway, intersection=n_contrib, NES=rich$NES, FDR=rich$padj)
 	return(list(results=res[keep,], contrib=contrib_genes[keep]))
 }
