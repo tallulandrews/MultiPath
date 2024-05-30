@@ -262,6 +262,9 @@ condense_terms <- function(out, equivalent=0.5, verbose=FALSE, prioritize.signal
 		warning("Warning: No pathways provided to condense_terms.")
 		return(out);	
 	}
+	if (is.null(dim(out$result))) {
+		return(out)
+	}
 	if(nrow(out$result) == 1) {
 		return(out)
 	}
