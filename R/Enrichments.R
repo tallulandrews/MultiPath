@@ -314,6 +314,10 @@ condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 	if(length(out) == 1) {
 		return(condense_terms(out, equivalent=equivalent, verbose=verbose))
 	}
+	# Remove any thing in out that has no enrichments
+	check <- sapply(out,function(x){dim(x$results)})
+	out <- out[!is.null(check)] # NOTE: This also removes those with only 1 enrichment
+
 	# merge all the enrichments into a single thing
 	merged_enrichments <- list(results=c(), contrib=list())
 	for (i in 1:length(out)) {
