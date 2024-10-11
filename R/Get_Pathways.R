@@ -16,6 +16,8 @@
 #' @examples
 #' genesets <- get_pathways("mouse")
 #' genesets <- get_pathways("human")
+#' @notes
+#' requires dbplyr version 3.2.4 or earlier
 #' @export
 get_pathways <- function(species=c("mouse", "human"), include.celltype=FALSE) {
 	if (species == "mouse") {
