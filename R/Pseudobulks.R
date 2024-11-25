@@ -370,7 +370,7 @@ remove_duplicate_rows <- function(mat, rownames_dups, method=c("max", "sum", "me
 	b_means <- Matrix::rowMeans(mat)
 
 	to.remove_all <- rep(FALSE, nrow(mat));
-	       for (g in unique(rownames_dups[duplicated(rownames_dups)])) {
+	for (g in unique(rownames_dups[duplicated(rownames_dups)])) {
                 if (verbose) {
                         print(paste(g, "is duplicated", sum(rownames_dups == g), "times"))
                 }
@@ -378,6 +378,11 @@ remove_duplicate_rows <- function(mat, rownames_dups, method=c("max", "sum", "me
                 if (method[1] == "max") {
                         top <- max(b_means[to.remove])
                         to.remove <- to.remove & b_means < top
+			if (sum(b_means[rownames_dups == g] == top) > 1) {
+				problems <- which(b_means==top & rownames_dups == g)
+				keep <- problems[1]
+				to.remove[problems[-1]] <- TRUE
+			}
                 } else {
                         if (method[1] == "sum") {
                                 new_row <- Matrix::colSums(mat[to.remove,])
