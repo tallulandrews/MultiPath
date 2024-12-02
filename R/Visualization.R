@@ -20,6 +20,8 @@
 #' @param cluster_cols whether to cluster the columns of the heatmap or not
 #' @param plot.result whether to make the plot or just calculate the summarized results.
 #' @param both.dir whether to select the ntop pathways both up & down or just the ntop based on pvalue regardless of direction 
+#' @param col.anno dataframe of annotations for each comparison. # Not implemented yet
+#' @param row.anno dataframe of annotations for each pathway.  # Not implemented yet
 #' @return invisibly the data matrix and p value matrix used to make the heatmap (as a list)
 #' @examples
 #' list_of_rich <- lapply(rpois(5, lambda=10), generate_synthetic_enrichments, ngenes=100)
@@ -27,7 +29,7 @@
 #' plot_enrichments_heatmap(list_of_rich)
 #' @export
 
-plot_enrichments_heatmap <- function(list_of_rich, pathways=NULL, pathways.names=NULL, ntop=5, colors=grDevices::colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=TRUE, stars.col="white", remove.prefix=TRUE, prefix.delim="_", log.scale=FALSE, bounds=NULL, cluster_rows=TRUE, cluster_cols=FALSE, plot.result=TRUE, both.dir=FALSE) {
+plot_enrichments_heatmap <- function(list_of_rich, pathways=NULL, pathways.names=NULL, ntop=5, colors=grDevices::colorRampPalette(rev(c("red", "orange", "yellow", "black", "navy", "purple", "magenta")))(100), stars=TRUE, stars.col="white", remove.prefix=TRUE, prefix.delim="_", log.scale=FALSE, bounds=NULL, cluster_rows=TRUE, cluster_cols=FALSE, plot.result=TRUE, both.dir=FALSE, col.anno=NULL, row.anno=NULL) {
 	# Collect pathways
 	all_pathways <- c();
 	all_pathways_names <- c();
@@ -68,19 +70,24 @@ plot_enrichments_heatmap <- function(list_of_rich, pathways=NULL, pathways.names
 
 	# Tidy up pathway names.
 	if (plot.result) {
-		db=NA
+		db=row.anno
 		# add annotation for origin of the pathways.
 		# anno <- data.frame(origin=pathway_origin)
 		# No i don't think this is that useful since there are duplicates that we just remove above...
 		if (remove.prefix & is.null(pathways.names)) {
 		# Convert removed db tags to a colour label
-			db <- sapply(strsplit(all_pathways, prefix.delim), function(x){x[[1]]})
+			pathway_prefixes <- sapply(strsplit(all_pathways, prefix.delim), function(x){x[[1]]})
 			all_pathway_names <- sub(paste0("^[^",prefix.delim,"]*",prefix.delim, sep=""), "", all_pathways)
 			while(sum(duplicated(all_pathway_names)) > 0) {
 				all_pathway_names[duplicated(all_pathway_names)] <- paste0(all_pathway_names[duplicated(all_pathway_names)], "1")
 			}
 		
-			anno_row <- data.frame(db); rownames(anno_row) <- all_pathway_names;
+			anno_row <- data.frame(pathway_prefixes); 
+			rownames(anno_row) <- all_pathway_names;
+			if (!is.null(row.anno)) {
+				anno_row <- merge(anno_row, row.anno)
+			}
+			
 			rownames(heat_data) <- all_pathway_names
 			plot_heatmap(heat_data, heat_pvals, 
 					log.scale=log.scale, bounds=bounds, colors=colors, 
