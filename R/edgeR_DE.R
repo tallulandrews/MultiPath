@@ -16,7 +16,8 @@
 #' conditions <- sapply(strsplit(colnames(example_celltype_pseudobulks), "[_-]"),function(x){x[[2]]})
 #' names(conditions) <- colnames(example_celltype_pseudobulks)
 #' design <- model.matrix(~conditions)
-#' de <- compute_cell_type_specific_DE(example_celltype_pseudobulks, design)
+#' de <- compute_cell_type_specific_DE(example_celltype_pseudobulks, design, de_method="deseq2")
+#' de <- compute_cell_type_specific_DE(example_celltype_pseudobulks, design, de_method="edger")
 #' @export
 compute_cell_type_specific_DE <- function(pseudobulks, design_matrix, fdr=0.05, de_method=c("deseq2", "edger")) {
 	rownames(design_matrix) <- colnames(pseudobulks)
@@ -25,16 +26,15 @@ compute_cell_type_specific_DE <- function(pseudobulks, design_matrix, fdr=0.05, 
 	all_outs <- list()
 	for (type in cell_type) {
 		dat <- pseudobulks[,cell_type==type]
-		these_samples <- sample[cell_type==type]
 		# Create the design matrix for this cell-type
-		design <- design_matrix[rownames(design_matrix) %in% these_samples,]
+		design <- design_matrix[rownames(design_matrix) %in% colnames(dat),]
 		if (Matrix::rankMatrix(design)[1] < ncol(design)) {
 			warning(paste("Warning: DE for", type, "could not be computed because the predictors are dependent."))
 			next;
 		}
-		if(de_method == "deseq2") {
+		if(de_method[1] == "deseq2") {
 			all_outs[[type]] <- one_cell_type_DE_edgeR(dat, design, fdr=fdr)
-		} else if (de_method == "edger") {
+		} else if (de_method[1] == "edger") {
 			all_outs[[type]] <- one_cell_type_DE_deseq2(dat, design, fdr=fdr)
 		} else {
 			print("Error: unrecognized DE method")
@@ -75,9 +75,9 @@ compute_cell_type_specific_DE_parallel <- function(pseudobulks, design_matrix, f
 		if (Matrix::rankMatrix(design)[1] < ncol(design)) {
 			warning(paste("Warning: DE for", type, "could not be computed because the predictors are dependent - design matrix is not full rank."))
 		} else {
-			if(de_method == "deseq2") {
+			if(de_method[1] == "deseq2") {
 				list(type=type, de=one_cell_type_DE_edgeR(dat, design, fdr=fdr))
-			} else if (de_method == "edger") {
+			} else if (de_method[1] == "edger") {
 				list(type=type, de=one_cell_type_DE_deseq2(dat, design, fdr=fdr))
 			} else {
 				print("Error: unrecognized DE method")
