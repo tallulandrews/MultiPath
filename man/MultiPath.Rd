@@ -2,10 +2,19 @@
 % Please edit documentation in R/MultiPath.R
 \docType{package}
 \name{MultiPath}
+\alias{MultiPath-package}
 \alias{MultiPath}
 \title{MultiPath}
 \description{
 Performs and visualizes many pathway enrichment tests, as well as pseudo-bulk differential expression for single-cell RNAseq
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/tallulandrews/MultiPath}
+  \item Report bugs at \url{https://github.com/tallulandrews/MultiPath/issues}
+}
+
 }
 \author{
 Tallulah Andrews <@tandrew6@uwo.ca>

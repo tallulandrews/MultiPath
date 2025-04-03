@@ -9,8 +9,9 @@ do_ora(
   pathways,
   background,
   fdr = 0.05,
-  min.term.size = 15,
-  max.term.size = 1000
+  min.term.size = 10,
+  max.term.size = 1000,
+  include.underrepresented = FALSE
 )
 }
 \arguments{
@@ -22,9 +23,11 @@ do_ora(
 
 \item{fdr}{the FDR threshold used to filter output.}
 
-\item{min.term.size}{pathways must have at least this number of genes to be tested.}
+\item{min.term.size}{pathways must have at least this number of genes in the background list of genes to be tested.}
 
-\item{max.term.size}{pathways must have fewer than this number of genes to be tested.}
+\item{max.term.size}{pathways must have fewer than this number of genes in the background list of genes to be tested.}
+
+\item{include.underrepresented}{whether to include pathways underrepresented among the provided genes}
 }
 \value{
 A list containing two items:

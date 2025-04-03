@@ -4,10 +4,12 @@
 \alias{get_overlaps}
 \title{Pathway Overlaps}
 \usage{
-get_overlaps(out)
+get_overlaps(out, denom = c("max", "min", "union"))
 }
 \arguments{
 \item{out}{a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea}
+
+\item{denom}{one of "max", "min" or "avg" determining how the denominator is calculated (See: details)}
 }
 \value{
 A matrix of overlap scores for all pairs of pathways.
@@ -17,6 +19,9 @@ Calculates the degree of overlap between genes contributing to each pathway enri
 }
 \details{
 Overlaps are calculated as the length of the intersection divided by the total genes in the larger pathway.
+"Max" = number of genes in the largest pathway. <- default
+"Min" = number of genes in the smallest pathway.
+"Union" = number of genes in the union of the two pathways.
 }
 \examples{
 paths <- convert_GSEAObj_to_list(get_pathways("test"))
