@@ -130,7 +130,7 @@ do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, 
 #' overlaps <- get_overlaps(rich)
 #' @export
 get_overlaps <- function(out, denom=c("max", "min", "union")) {
-#	total_genes <- sapply(out$contrib, length)
+	total_genes <- sapply(out$contrib, length)
 #	olap <- lapply(out$contrib, function(x) {sapply(intersectToList(out$contrib, x), length)})
 #	olap <- matrix(unlist(olap), ncol=length(out$contrib))
 #	rownames(olap) <- colnames(olap) <- names(out$contrib)
@@ -289,6 +289,7 @@ condense_terms <- function(out, equivalent=0.5, verbose=FALSE, prioritize.signal
 
 # select one representative for each group of overlapping terms
 condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
+	separated_symbol = ";="
 	if (is.null(out)) {
 		warning("Warning: No pathways provided to condense_terms.")
 		return(out);	
@@ -302,7 +303,7 @@ condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 		this_name <- names(out)[i]
 		out[[i]]$results$condition <- this_name
 		merged_enrichments$results <- rbind(merged_enrichments$results, out[[i]]$results)
-		names(out[[i]]$contrib) <- paste(this_name, names(out[[i]]$contrib), sep=";=")
+		names(out[[i]]$contrib) <- paste(this_name, names(out[[i]]$contrib), sep=separated_symbol)
 		merged_enrichments$contrib <- append( merged_enrichments$contrib, out[[i]]$contrib)
 	}
 	# Identify equivalent terms based on clustering of overlaps between them
@@ -319,12 +320,25 @@ condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 	# - Should be the most significant on average across all the conditions.
 	for (g in non_unique) {
 		synonymous_terms <- names(groups)[groups==g]
+		stuff <- strsplit(synonymous_terms, separated_symbol) 
+		terms <- sapply(stuff, function(x){x[2]})
+		condition <- sapply(stuff, function(x){x[1]})
 		# Number of conditions each term is found in
-
-		chosen_term <- select_term(out, names(groups)[groups==g], verbose=verbose)
+		n_condition <- aggregate(condition, by=list(terms), function(x){length(unique(x))})
+		potential <- n_condition[n_condition[,2]==max(n_condition[,2]),1]
+		
+                # average p-values
+		stats <- merged_enrichments$results[merged_enrichments$results$pathway %in% potential,]
+		overall_score <- aggregate(stats$FDR, by=list(stats$pathway), mean)
+		chosen_term <- overall_score[overall_score$x == min(overall_score$x),1]
 		keep <- c(keep, chosen_term)
 	}
-	new_out <- list(results=out$results[out$results$pathway %in% keep,], contrib=out$contrib[names(out$contrib) %in% keep])
+	new_out <- list()
+	for (i in 1:length(out)) {
+		this_name <- names(out)[i]
+		new_out[[this_name]] <- list(results=out[[i]]$results[out[[i]]$results$pathway %in% keep,], 
+					     contrib=out[[i]]$contrib[names(out[[i]]$contrib) %in% keep])
+	}
 	return(new_out)
 }
 
