@@ -5,7 +5,7 @@ Title: Multi-experiment pathway analysis and visualization
 Author: Tallulah Andrews <tallulandrews@gmail.com>
 Maintainer: Tallulah Andrews <tallulandrews@gmail.com>
 Depends: R (>= 4.1.2), knitr
-Imports: pheatmap, Matrix, msigdb, fgsea, Rcpp, edgeR, foreach
+Imports: pheatmap, Matrix, msigdb, fgsea, Rcpp, edgeR, foreach, stats
 Suggests: 
     rmarkdown
 LinkingTo: Rcpp
@@ -15,4 +15,4 @@ Description: Calculates differentially expressed genes, and pathway enrichments 
 URL: https://github.com/tallulandrews/MultiPath
 BugReports: https://github.com/tallulandrews/MultiPath/issues
 License: GPL (>=2)
-RoxygenNote: 7.2.1
+RoxygenNote: 7.3.1

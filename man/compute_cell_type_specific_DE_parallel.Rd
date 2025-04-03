@@ -8,7 +8,8 @@ compute_cell_type_specific_DE_parallel(
   pseudobulks,
   design_matrix,
   fdr = 0.05,
-  n.cores = 1
+  n.cores = 1,
+  de_method = c("deseq2", "edger")
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ compute_cell_type_specific_DE_parallel(
 \item{fdr}{False discovery rate threshold used to filter DE genes}
 
 \item{n.cores}{Number of CPUs to use for parallel computing}
+
+\item{de_method}{Which pseudobulk DE method to use (deseq2 or edger).}
 }
 \value{
 a list of dataframes containing DE results for each cell-type
@@ -27,12 +30,13 @@ a list of dataframes containing DE results for each cell-type
 Calculated differential expression for each cell-type given an appropriate design matrix
 }
 \details{
-Uses edgeR (QLR test) to calculate differential expression for each coefficient in the design matrix for each cell-type. Results are filtered based on the provided FDR threshold. Performs differential expression for each cell-type in parallel to speed up computations.
+Uses edgeR (QLR test) or DESeq2 to calculate differential expression for each coefficient in the design matrix for each cell-type. Results are filtered based on the provided FDR threshold. Performs differential expression for each cell-type in parallel to speed up computations. See: one_cell_type_DE_edgeR and one_cell_type_DE_deseq2 for details.
 }
 \examples{
 example_celltype_pseudobulks <- generate_synthetic_pseudobulks()
 conditions <- sapply(strsplit(colnames(example_celltype_pseudobulks), "[_-]"),function(x){x[[2]]})
 names(conditions) <- colnames(example_celltype_pseudobulks)
 design <- model.matrix(~conditions)
-de <- compute_cell_type_specific_DE_parallel(example_celltype_pseudobulks, design)
+de <- compute_cell_type_specific_DE_parallel(example_celltype_pseudobulks, design, de_method="deseq2")
+de <- compute_cell_type_specific_DE_parallel(example_celltype_pseudobulks, design, de_method="edger")
 }

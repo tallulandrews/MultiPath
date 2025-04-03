@@ -4,7 +4,12 @@
 \alias{compute_cell_type_specific_DE}
 \title{Cell-type specific DE}
 \usage{
-compute_cell_type_specific_DE(pseudobulks, design_matrix, fdr = 0.05)
+compute_cell_type_specific_DE(
+  pseudobulks,
+  design_matrix,
+  fdr = 0.05,
+  de_method = c("deseq2", "edger")
+)
 }
 \arguments{
 \item{pseudobulks}{a pseudobulk matrix created from get_pseudobulks}
@@ -12,6 +17,8 @@ compute_cell_type_specific_DE(pseudobulks, design_matrix, fdr = 0.05)
 \item{design_matrix}{a design matrix created with model.matrix}
 
 \item{fdr}{False discovery rate threshold used to filter DE genes}
+
+\item{de_method}{Which pseudobulk DE method to use (deseq2 or edger).}
 }
 \value{
 a list of dataframes containing DE results for each cell-type
@@ -20,7 +27,7 @@ a list of dataframes containing DE results for each cell-type
 Calculated differential expression for each cell-type given an appropriate design matrix
 }
 \details{
-Uses edgeR (QLR test) to calculate differential expression for each coefficient in the design matrix for each cell-type. Results are filtered based on the provided FDR threshold.
+Uses edgeR (QLR test) or DESeq2 to calculate differential expression for each coefficient in the design matrix for each cell-type. Results are filtered based on the provided FDR threshold. See: one_cell_type_DE_edgeR and one_cell_type_DE_deseq2 for details.
 }
 \examples{
 example_celltype_pseudobulks <- generate_synthetic_pseudobulks()

@@ -22,9 +22,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// charSort
+Rcpp::CharacterVector charSort(Rcpp::CharacterVector x);
+RcppExport SEXP _MultiPath_charSort(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(charSort(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// overlapsListvsList
+NumericMatrix overlapsListvsList(List lt1, List lt2);
+RcppExport SEXP _MultiPath_overlapsListvsList(SEXP lt1SEXP, SEXP lt2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type lt1(lt1SEXP);
+    Rcpp::traits::input_parameter< List >::type lt2(lt2SEXP);
+    rcpp_result_gen = Rcpp::wrap(overlapsListvsList(lt1, lt2));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_MultiPath_intersectToList", (DL_FUNC) &_MultiPath_intersectToList, 2},
+    {"_MultiPath_charSort", (DL_FUNC) &_MultiPath_charSort, 1},
+    {"_MultiPath_overlapsListvsList", (DL_FUNC) &_MultiPath_overlapsListvsList, 2},
     {NULL, NULL, 0}
 };
 

@@ -324,12 +324,12 @@ condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 		terms <- sapply(stuff, function(x){x[2]})
 		condition <- sapply(stuff, function(x){x[1]})
 		# Number of conditions each term is found in
-		n_condition <- aggregate(condition, by=list(terms), function(x){length(unique(x))})
+		n_condition <- stats::aggregate(condition, by=list(terms), function(x){length(unique(x))})
 		potential <- n_condition[n_condition[,2]==max(n_condition[,2]),1]
 		
                 # average p-values
 		stats <- merged_enrichments$results[merged_enrichments$results$pathway %in% potential,]
-		overall_score <- aggregate(stats$FDR, by=list(stats$pathway), mean)
+		overall_score <- stats::aggregate(stats$FDR, by=list(stats$pathway), mean)
 		chosen_term <- overall_score[overall_score$x == min(overall_score$x),1]
 		keep <- c(keep, chosen_term)
 	}
