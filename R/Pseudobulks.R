@@ -303,7 +303,7 @@ get_pseudobulk <- function(mat, clusters, donors, method=c("sum", "mean"), trim=
                 if(is.null(dim(d_expr))) {
                         l <- sapply(d_expr, length)
                         keep <- which(l == nrow(mat))
-                        d_expr <- matrix(d_expr[[keep]], ncol=length(keep), byrow=FALSE);
+                        d_expr <- matrix(unlist(d_expr[keep]), ncol=length(keep), byrow=FALSE);
                         rownames(d_expr) <- rownames(mat);
                         colnames(d_expr) <- paste(clusters[clust[1]], levels(donors)[keep], sep="_")
                 } else {
