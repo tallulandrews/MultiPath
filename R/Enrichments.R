@@ -34,6 +34,7 @@ do_gsea <- function(scored_genes, pathways, fdr=0.05, min.term.size=15, max.term
 	if (sum(keep) == 0) {warning("Warning:No significant enrichments"); return();}
 	
 	contrib_genes <- as.list(rich[,8][[1]])
+	names(contrib_genes) <- rich$pathway
 	n_contrib <- sapply(contrib_genes, length)
 	
 	res = data.frame(pathway=rich$pathway, intersection=n_contrib, NES=rich$NES, FDR=rich$padj)
@@ -174,6 +175,7 @@ get_overlaps <- function(out, denom=c("max", "min", "union")) {
 #' @export
 cluster_overlaps <- function(overlaps, equivalent=0.5, plot.result=TRUE) {
 	groups <- stats::cutree(stats::hclust(stats::as.dist(1-overlaps), method="single"), h=1-equivalent)
+	names(groups) <- colnames(overlaps)
 	if (plot.result) {
 		unique_paths = names(table(groups))[table(groups) == 1]
 		anno <- data.frame(group=groups)
@@ -193,8 +195,8 @@ cluster_overlaps <- function(overlaps, equivalent=0.5, plot.result=TRUE) {
 #' These ranks are summed and the best scoring pathway is selected.
 #' @param out a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea
 #' @param terms a vector of names of pathways that are synonymous
+#' @param path_scores a dataframe containing the columns: "pathway", "Score", "FDR". This is used primarily used as part of condensed_terms_multi, to prioritize pathways first by the Score, then in the case of tied Scores by FDR.  
 #' @param verbose boolean, whether to print data table used as the basis for selecting the term.
-#' @param prioritize.signaling a boolean, indicating whether pathways recieve a bonus for being signalling pathways
 #' @return The name of one pathway to represent the group.
 #' @examples
 #' paths <- convert_GSEAObj_to_list(get_pathways("test"))
@@ -203,22 +205,46 @@ cluster_overlaps <- function(overlaps, equivalent=0.5, plot.result=TRUE) {
 #' pathway_groups <- cluster_overlaps(overlaps)
 #' chosen1 <- select_term(rich, rich$pathway[pathway_groups == "1"])
 #' @export
-select_term <- function(out, terms, verbose=FALSE, prioritize.signaling=TRUE) {
-	term_length <- sapply(strsplit(terms, "[ _]"), length)
-	intersection_size <- out$results$intersection[match(terms, out$results$pathway)]
+select_term <- function(out, terms, verbose=FALSE, path_scores=NULL) {
+	#term_length <- sapply(strsplit(terms, "[ _]"), length)
+	#intersection_size <- out$results$intersection[match(terms, out$results$pathway)]
 	pvalue <- out$results$FDR[match(terms, out$results$pathway)]
-	is_signalling <- grepl("signaling", terms, ignore.case=TRUE)+0
+	#is_signalling <- grepl("signaling", terms, ignore.case=TRUE)+0
 
 	# Key words: Signaling
 	# intersection size : larget == better
 	# length of term name : smaller == better
 	# pvalue : smaller == better
-	consensus <- rank(term_length, ties.method="min")+rank(1/intersection_size, ties.method="min")+rank(pvalue, ties.method="min")+rank(1-is_signalling, ties.method="min")
-	chosen <- consensus == min(consensus)
+	# consensus <- rank(term_length, ties.method="min")+rank(1/intersection_size, ties.method="min")+rank(pvalue, ties.method="min")+rank(1-is_signalling, ties.method="min")
+	# chosen <- consensus == min(consensus)
+	chosen <- pvalue == min(pvalue)
+	if (!is.null(path_scores)) {
+		if (! sum(colnames(path_scores) %in% c("pathway", "Score", "FDR"))==3) {
+			stop("Error: path_scores does not have the required columns.") 
+		}
+		path_scores2 <- path_scores[match(terms, path_scores[,"pathway"]),]
+		if (!identical(path_scores2[,"pathway"],terms)) {
+			stop('Error: The "pathway" column of the path_scores table does not match the provided pathway enrichments.')
+		}
+		# First choose by maximum Score
+		max_score <- max(path_scores2[,"Score"])
+		top_candidates <- path_scores2[,"Score"] == max_score
+		if (sum(top_candidates) > 1) {
+			# Then choose by lowest avg FDR
+			min_FDR <- min(path_scores2[top_candidates,"FDR"])
+			chosen <- top_candidates & path_scores2[,"FDR"] <= min_FDR
+		} else {
+			chosen <- top_candidates
+		}
+	}
 	if (verbose){
 		gene_frequencies <- table(unlist(out$contrib[names(out$contrib) %in% terms]))
-		print(data.frame(terms, term_length, intersection_size, pvalue, is_signalling, consensus, chosen))
+		#print(data.frame(terms, term_length, intersection_size, pvalue, is_signalling, consensus, chosen))
+		print(data.frame(terms, pvalue, chosen))
 		print(gene_frequencies)
+	}
+	if (sum(chosen) == 0) {
+		stop("Error: Failed to chose a representative term")
 	}
 	return(terms[chosen][1]) # ensure only one term is returned for each group.
 }
@@ -234,7 +260,7 @@ select_term <- function(out, terms, verbose=FALSE, prioritize.signaling=TRUE) {
 #' @param out a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea
 #' @param equivalent a scalar value for the equivalence threshold.
 #' @param verbose boolean, whether to print data table used as the basis for selecting representative terms.
-#' @param prioritize.signaling a boolean, indicating whether pathways recieve a bonus for being signalling pathways
+#' @param path_scores a dataframe containing the columns: "pathway", "Score", "FDR". This is used primarily used as part of condensed_terms_multi, to prioritize pathways first by the Score, then in the case of tied Scores by FDR.  
 #' @return The same structured data like the output from do_ora or do_fgse but with synonmyous termscondensed into a single pathway
 #' @examples
 #' paths <- convert_GSEAObj_to_list(get_pathways("test"))
@@ -243,7 +269,7 @@ select_term <- function(out, terms, verbose=FALSE, prioritize.signaling=TRUE) {
 #' @export
 
 # select one representative for each group of overlapping terms
-condense_terms <- function(out, equivalent=0.5, verbose=FALSE, prioritize.signaling=TRUE) {
+condense_terms <- function(out, equivalent=0.5, verbose=FALSE, path_scores=NULL) {
 	if (is.null(out)) {
 		warning("Warning: No pathways provided to condense_terms.")
 		return(out);	
@@ -256,7 +282,7 @@ condense_terms <- function(out, equivalent=0.5, verbose=FALSE, prioritize.signal
 	non_unique <- names(table(groups))[table(groups)>1]
 	keep <- names(groups)[!groups %in% non_unique]
 	for (g in non_unique) {
-		chosen_term <- select_term(out, names(groups)[groups==g], verbose=verbose, prioritize.signaling=prioritize.signaling)
+		chosen_term <- select_term(out, names(groups)[groups==g], verbose=verbose, path_scores=path_scores)
 		keep <- c(keep, chosen_term)
 	}
 	new_out <- list(results=out$results[out$results$pathway %in% keep,], contrib=out$contrib[names(out$contrib) %in% keep])
@@ -288,7 +314,29 @@ condense_terms <- function(out, equivalent=0.5, verbose=FALSE, prioritize.signal
 #' @export
 
 # select one representative for each group of overlapping terms
-condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
+# This is super memory inefficient
+# Use Rowan Canario's New Approach Instead
+condense_terms_multi <- function(out_list, equivalient=0.5, verbose=FALSE) {
+
+	# Calculate frequency and average FDR for each pathway across all tests
+	all_pathways <- lapply(out_list, function(x) x[["results"]][,"pathway"])
+	pathway_freq <- table(unlist(all_pathways))
+	all_FDRs <- lapply(out_list, function(x) x[["results"]][,"FDR"])
+	avg_FDRs <- aggregate(unlist(all_FDRs), by=list(unlist(all_pathways)), mean)
+	if (!identical(avg_FDRs[,1], names(pathway_freq))) {
+		stop("Error: FDRs do not match Freqs in condense_terms_multi")
+	}
+	pathway_dat <- data.frame(pathway=names(pathway_freq), Score=as.numeric(unlist(pathway_freq)), FDR=avg_FDRs[,2])
+
+	for (i in 1:length(out_list)) {
+		out_list[[i]] <- condense_terms(out_list[[i]], path_scores=pathway_dat)
+	}
+	return(out_list)
+}
+
+
+
+obsolete_condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 	separated_symbol = ";="
 	if (is.null(out)) {
 		warning("Warning: No pathways provided to condense_terms.")
