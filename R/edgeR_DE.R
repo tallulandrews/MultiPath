@@ -24,7 +24,15 @@ compute_cell_type_specific_DE <- function(pseudobulks, design_matrix, fdr=0.05, 
 	sample <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[2]]}) # correct order
 	cell_type <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[1]]}) # correct order
 	all_outs <- list()
-	for (type in cell_type) {
+	if (is.null(cell.types)) {
+		cell.types <-  unique(cell_type)
+	}
+	for (type in cell.types) {
+		print(type)
+		if (sum(cell_type==type) < 2) {
+			warning(paste("Warning: DE for", type, "could not be computed because fewer than 2 samples contain this type."))
+			next;
+		}
 		dat <- pseudobulks[,cell_type==type]
 		# Create the design matrix for this cell-type
 		design <- design_matrix[rownames(design_matrix) %in% colnames(dat),]

@@ -4,7 +4,12 @@
 \alias{remove_duplicate_rows}
 \title{Remove Duplicate Rows}
 \usage{
-remove_duplicate_rows(mat, rownames_dups, method = c("max", "sum", "mean"))
+remove_duplicate_rows(
+  mat,
+  rownames_dups,
+  method = c("max", "sum", "mean"),
+  verbose = TRUE
+)
 }
 \arguments{
 \item{mat}{a matrix or sparse matrix of numeric data, such as a gene expression matrix.}
@@ -12,6 +17,8 @@ remove_duplicate_rows(mat, rownames_dups, method = c("max", "sum", "mean"))
 \item{rownames_dups}{a vector of rownames for `mat` that contains duplicates.}
 
 \item{method}{which approach to use to aggregate data across duplicated rows (see:Details).}
+
+\item{verbose}{whether to print each duplicated rowname as it is being fixed.}
 }
 \value{
 a matrix with the provided rownames but without duplicates.
@@ -26,6 +33,7 @@ sum : add up the rows with duplicated rownames for each column.
 mean: take the average across the duplicated rows for each column
 }
 \examples{
+# Normal Usage
 example_data <- generate_test_cellcounts()$counts
 gene_ids <- sample(paste("gene", 1:10, sep=""), 20, replace=TRUE)
 deduped <- remove_duplicate_rows(example_data, gene_ids, method="max")
@@ -34,4 +42,18 @@ avg <- remove_duplicate_rows(example_data, gene_ids, method="mean")
 dim(deduped) == dim(total) # TRUE
 dim(deduped) == dim(avg) # TRUE
 dim(deduped)[1] == length(unique(gene_ids)) # TRUE
+
+# Test cases
+expr_mat <- matrix(rnorm(100), nrow=10)
+gene_names <- c("A", "B", "B", "B", "C",
+                "C", "D", "E", "F", "G")
+fix_mat <- remove_duplicate_rows(expr_mat, gene_names, method="max")
+fix_mat <- remove_duplicate_rows(expr_mat, gene_names, method="sum")
+fix_mat <- remove_duplicate_rows(expr_mat, gene_names, method="mean")
+
+require(Matrix)
+sparse <- expr_mat; sparse[sparse < 0] <- 0; sparse <- as(sparse, "dgCMatrix")
+fix_mat <- remove_duplicate_rows(sparse, gene_names, method="max")
+fix_mat <- remove_duplicate_rows(sparse, gene_names, method="sum")
+fix_mat <- remove_duplicate_rows(sparse, gene_names, method="mean")
 }

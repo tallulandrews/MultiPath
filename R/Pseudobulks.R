@@ -264,7 +264,7 @@ trim_for_pseudobulks <- function(clusters, individual, nmin=10) {
 #' 
 #' @param mat a matrix of umi counts or normalized expression for each cell, genes=rows, cells=columns, supports sparse matrices
 #' @param clusters a vector of cluster or cell-type labels for each cell.
-#' @param donors a vector of donor or sample labels for each cell.
+#' @param individual a vector of patient or sample labels for each cell.
 #' @param method whether to add up or average the expression in each cell-type x sample group of cell.
 #' @param trim cell-type x sample groups with fewer than this many cells will not be included in the pseudobulk matrix
 #' @param refactor whether to factor the clusters & donors vectors - recommended if trimming.
@@ -278,34 +278,34 @@ trim_for_pseudobulks <- function(clusters, individual, nmin=10) {
 #'   sample <- sapply(strsplit(colnames(test2), "_"), function(x){x[[2]]})
 #'   cell_type <- sapply(strsplit(colnames(test2), "_"), function(x){x[[1]]})
 #' @export
-get_pseudobulk <- function(mat, clusters, donors, method=c("sum", "mean"), trim=10, refactor=TRUE) {
+get_pseudobulk <- function(mat, clusters, individual, method=c("sum", "mean"), trim=10, refactor=TRUE) {
 	#avoid naming issues - we use underscores to sepearate cluster vs donor in pseudobulk column names
 	clusters <- sub("_", "-", clusters)
-	donor <- sub("_", "-", donors)
+	individual <- sub("_", "-", individual)
 
 	# Remove cluster-donor pairs where there are too few cells to get a reliable expression profile
 	if (trim > 0) {
-		to.exclude <- trim_for_pseudobulks(clusters, donors, nmin=trim)
+		to.exclude <- trim_for_pseudobulks(clusters, individual, nmin=trim)
 		mat <- mat[,!to.exclude]
 		clusters <- clusters[!to.exclude]
-		donors <- donors[!to.exclude]
+		individual <- individual[!to.exclude]
 	}
 	if (refactor) {
 		clusters <- factor(clusters)
-		donors <- factor (donors)
+		individual <- factor (individual)
 	}
 
 	# Subset "mat" to each pair of donors & clusters and add up the umi counts for all the cells
         c <- split(seq(ncol(mat)), clusters);
         # expression per donor in this cluster
         clust_expr <- lapply(c, function(clust) {
-                d_expr <- group_rowmeans(mat[,clust], donors[clust], type=method[1]);
+                d_expr <- group_rowmeans(mat[,clust], individual[clust], type=method[1]);
                 if(is.null(dim(d_expr))) {
                         l <- sapply(d_expr, length)
                         keep <- which(l == nrow(mat))
                         d_expr <- matrix(unlist(d_expr[keep]), ncol=length(keep), byrow=FALSE);
                         rownames(d_expr) <- rownames(mat);
-                        colnames(d_expr) <- paste(clusters[clust[1]], levels(donors)[keep], sep="_")
+                        colnames(d_expr) <- paste(clusters[clust[1]], levels(individual)[keep], sep="_")
                 } else {
                         colnames(d_expr) <- paste(clusters[clust[1]], colnames(d_expr), sep="_")
                 }
@@ -338,8 +338,10 @@ get_pseudobulk <- function(mat, clusters, donors, method=c("sum", "mean"), trim=
 #' @param mat a matrix or sparse matrix of numeric data, such as a gene expression matrix.
 #' @param rownames_dups a vector of rownames for `mat` that contains duplicates.
 #' @param method which approach to use to aggregate data across duplicated rows (see:Details).
+#' @param verbose whether to print each duplicated rowname as it is being fixed.
 #' @return a matrix with the provided rownames but without duplicates.
 #' @examples
+#' # Normal Usage
 #' example_data <- generate_test_cellcounts()$counts
 #' gene_ids <- sample(paste("gene", 1:10, sep=""), 20, replace=TRUE)
 #' deduped <- remove_duplicate_rows(example_data, gene_ids, method="max")
@@ -348,31 +350,54 @@ get_pseudobulk <- function(mat, clusters, donors, method=c("sum", "mean"), trim=
 #' dim(deduped) == dim(total) # TRUE
 #' dim(deduped) == dim(avg) # TRUE
 #' dim(deduped)[1] == length(unique(gene_ids)) # TRUE
+#' 
+#' # Test cases
+#' expr_mat <- matrix(rnorm(100), nrow=10)
+#' gene_names <- c("A", "B", "B", "B", "C",
+#'                 "C", "D", "E", "F", "G")
+#' fix_mat <- remove_duplicate_rows(expr_mat, gene_names, method="max")
+#' fix_mat <- remove_duplicate_rows(expr_mat, gene_names, method="sum")
+#' fix_mat <- remove_duplicate_rows(expr_mat, gene_names, method="mean")
+#'
+#' require(Matrix)
+#' sparse <- expr_mat; sparse[sparse < 0] <- 0; sparse <- as(sparse, "dgCMatrix")
+#' fix_mat <- remove_duplicate_rows(sparse, gene_names, method="max")
+#' fix_mat <- remove_duplicate_rows(sparse, gene_names, method="sum")
+#' fix_mat <- remove_duplicate_rows(sparse, gene_names, method="mean")
 #' @export
-remove_duplicate_rows <- function(mat, rownames_dups, method=c("max", "sum", "mean")) {
+remove_duplicate_rows <- function(mat, rownames_dups, method=c("max", "sum", "mean"), verbose=TRUE) {
         rownames_dups <- as.character(rownames_dups)
-        for (g in unique(rownames_dups[duplicated(rownames_dups)])) {
-                print(paste(g, "is duplicated", sum(rownames_dups == g), "times"))
-                b_means <- rowMeans(mat)
-                to.remove <- which(rownames_dups == g)
+	b_means <- Matrix::rowMeans(mat)
+
+	to.remove_all <- rep(FALSE, nrow(mat));
+	for (g in unique(rownames_dups[duplicated(rownames_dups)])) {
+                if (verbose) {
+                        print(paste(g, "is duplicated", sum(rownames_dups == g), "times"))
+                }
+                to.remove <- rownames_dups == g
                 if (method[1] == "max") {
                         top <- max(b_means[to.remove])
-                        to.remove <- rownames_dups == g & b_means < top
+                        to.remove <- to.remove & b_means < top
+			if (sum(b_means[rownames_dups == g] == top) > 1) {
+				problems <- which(b_means==top & rownames_dups == g)
+				keep <- problems[1]
+				to.remove[problems[-1]] <- TRUE
+			}
                 } else {
                         if (method[1] == "sum") {
-                                new_row <- colSums(mat[to.remove,])
+                                new_row <- Matrix::colSums(mat[to.remove,])
                         } else if (method[1] == "mean") {
-                                new_row <- colMeans(mat[to.remove,])
+                                new_row <- Matrix::colMeans(mat[to.remove,])
                         }
-                        mat <- rbind(mat, new_row)
-                        rownames_dups <- c(rownames_dups, g)
+                        replace <- which(to.remove == TRUE)[1];
+                        mat[replace,] <- new_row
+                        to.remove[replace] <- FALSE
                 }
-                mat <- mat[!to.remove,]
-                rownames_dups <- rownames_dups[!to.remove]
+                to.remove_all <- to.remove_all | to.remove
         }
-        final_is.dup <- duplicated(rownames_dups);
-        mat <- mat[!final_is.dup,]
-        rownames_dups <- rownames_dups[!final_is.dup]
+        if (sum(to.remove_all) != sum(duplicated(rownames_dups))) {print("Something is wrong!")}
+        mat <- mat[!to.remove_all,]
+        rownames_dups <- rownames_dups[!to.remove_all]
         rownames(mat) <- rownames_dups
         return(mat)
 }

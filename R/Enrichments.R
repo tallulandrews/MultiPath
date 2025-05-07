@@ -33,10 +33,16 @@ do_gsea <- function(scored_genes, pathways, fdr=0.05, min.term.size=15, max.term
 	keep <- !is.na(rich$pval) & rich$padj < fdr
 	if (sum(keep) == 0) {warning("Warning:No significant enrichments"); return();}
 	
-	contrib_genes <- as.list(rich[,8][[1]])
+	#contrib_genes <- as.list(rich[,8][[1]]) # This doesn't work when in a package????
+	contrib_genes <- lapply(1:nrow(rich), function(x){unlist(rich[x,8])})
 	names(contrib_genes) <- rich$pathway
 	n_contrib <- sapply(contrib_genes, length)
 	
+	#print(length(rich$pathway))
+	#print(length(n_contrib))
+	#print(length(rich$NES))
+	#print(length(rich$padj))
+	#return(rich)
 	res = data.frame(pathway=rich$pathway, intersection=n_contrib, NES=rich$NES, FDR=rich$padj)
 	return(list(results=res[keep,], contrib=contrib_genes[keep]))
 }
@@ -105,7 +111,14 @@ do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, 
 	pathways <- pathways[keep]
 	contrib_genes <- intersectToList(pathways, sig_genes)
 	names(contrib_genes) <- names(pathways)
-	score <- log2(((x[keep]+0.1)/k)/(m[keep]/n_background)) # Add the 0.1 to avoid -Inf
+	x[x==0] <- 1/n_background
+	score <- log2(((x[keep])/k)/(m[keep]/n_background)) # Add the 0.1 to avoid -Inf
+	if (n_genes == 0) {
+		# Catch cases where no genes provided
+		score <- rep(0, length(score))
+		fdr_res <- rep(1, length(fdr_res))
+		warning("Warning: no genes in query set")
+	}
 	res = data.frame(pathway=names(pathways), intersection=x[keep], log2fe=score, FDR=fdr_res[keep]) 
 	return(list(results=res, contrib=contrib_genes))
 }
@@ -274,6 +287,9 @@ condense_terms <- function(out, equivalent=0.5, verbose=FALSE, path_scores=NULL)
 		warning("Warning: No pathways provided to condense_terms.")
 		return(out);	
 	}
+	if (is.null(dim(out$result))) {
+		return(out)
+	}
 	if(nrow(out$result) == 1) {
 		return(out)
 	}
@@ -339,12 +355,16 @@ condense_terms_multi <- function(out_list, equivalient=0.5, verbose=FALSE) {
 obsolete_condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 	separated_symbol = ";="
 	if (is.null(out)) {
-		warning("Warning: No pathways provided to condense_terms.")
+		warning("Warning: No pathways provided to condense_terms_multi.")
 		return(out);	
 	}
 	if(length(out) == 1) {
 		return(condense_terms(out, equivalent=equivalent, verbose=verbose))
 	}
+	# Remove any thing in out that has no enrichments
+	check <- sapply(out,function(x){dim(x$results)})
+	out <- out[!is.null(check)] # NOTE: This also removes those with only 1 enrichment
+
 	# merge all the enrichments into a single thing
 	merged_enrichments <- list(results=c(), contrib=list())
 	for (i in 1:length(out)) {
@@ -361,7 +381,8 @@ obsolete_condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 	# Identify unique terms, these we keep as is.
 	non_unique <- names(table(groups))[table(groups)>1]
 	keep <- names(groups)[!groups %in% non_unique]
-	
+	tmp <- strsplit(keep, separated_symbol)
+	keep <- sapply(tmp, function(x){x[2]})	
 	# For each non-unique term, we need to identify a consensus term
 	# Criteria: 
 	# - Should be found in all of the conditions that the group of pathways is found in
@@ -386,6 +407,14 @@ obsolete_condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 		this_name <- names(out)[i]
 		new_out[[this_name]] <- list(results=out[[i]]$results[out[[i]]$results$pathway %in% keep,], 
 					     contrib=out[[i]]$contrib[names(out[[i]]$contrib) %in% keep])
+		res <- out[[i]]$results
+		contrib <- out[[i]]$contrib
+		names(contrib) <- sapply(strsplit(names(contrib), separated_symbol), function(x){x[[2]]})
+
+		new_out[[this_name]] <- list(results=res[res$pathway %in% keep,], 
+					     contrib=contrib[names(contrib) %in% keep])
+		if (nrow(new_out[[this_name]]$results) != length(new_out[[this_name]]$contrib)) {warning("What? Something's wrong.")}
+>>>>>>> 2d8776196f84e30dadab9a79ff09df3469bf8024
 	}
 	return(new_out)
 }

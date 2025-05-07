@@ -1,0 +1,8 @@
+import(RColorBrewer)
+import(gplots)
+import(Matrix)
+import(stats)
+import(graphics)
+import(pheatmap)
+importFrom("grDevices", "col2rgb", "colorRampPalette", "densCols")
+importFrom("methods", "as")
