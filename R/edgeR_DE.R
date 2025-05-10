@@ -24,7 +24,7 @@ compute_cell_type_specific_DE <- function(pseudobulks, design_matrix, fdr=0.05, 
 	sample <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[2]]}) # correct order
 	cell_type <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[1]]}) # correct order
 	all_outs <- list()
-	if (is.null(cell.types)) {
+	if (is.null(cell_types)) {
 		cell.types <-  unique(cell_type)
 	}
 	for (type in cell.types) {

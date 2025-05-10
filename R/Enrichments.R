@@ -414,7 +414,6 @@ obsolete_condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 		new_out[[this_name]] <- list(results=res[res$pathway %in% keep,], 
 					     contrib=contrib[names(contrib) %in% keep])
 		if (nrow(new_out[[this_name]]$results) != length(new_out[[this_name]]$contrib)) {warning("What? Something's wrong.")}
->>>>>>> 2d8776196f84e30dadab9a79ff09df3469bf8024
 	}
 	return(new_out)
 }
