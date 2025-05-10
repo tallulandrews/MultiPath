@@ -4,14 +4,14 @@
 \alias{condense_terms_multi}
 \title{Condense Terms Multi}
 \usage{
-condense_terms_multi(out, equivalent = 0.5, verbose = FALSE)
+condense_terms_multi(out_list, equivalient = 0.5, verbose = FALSE)
 }
 \arguments{
-\item{equivalent}{a scalar value for the equivalence threshold. (see: \code{get_overlaps})}
+\item{out_list}{a list of pathway enrichments for multiple DE tests obtained from do_ora or do_fgsea}
 
 \item{verbose}{boolean, whether to print data table used as the basis for selecting representative terms.}
 
-\item{out_list}{a list of pathway enrichments for multiple DE tests obtained from do_ora or do_fgsea}
+\item{equivalent}{a scalar value for the equivalence threshold. (see: \code{get_overlaps})}
 }
 \value{
 The same structured list of pathway enrichments but with redundant terms removed.

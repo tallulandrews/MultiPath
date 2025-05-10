@@ -20,7 +20,9 @@ plot_enrichments_heatmap(
   cluster_rows = TRUE,
   cluster_cols = FALSE,
   plot.result = TRUE,
-  both.dir = FALSE
+  both.dir = FALSE,
+  col.anno = NULL,
+  row.anno = NULL
 )
 }
 \arguments{
@@ -53,6 +55,10 @@ plot_enrichments_heatmap(
 \item{plot.result}{whether to make the plot or just calculate the summarized results.}
 
 \item{both.dir}{whether to select the ntop pathways both up & down or just the ntop based on pvalue regardless of direction}
+
+\item{col.anno}{dataframe of annotations for each comparison. # Not implemented yet}
+
+\item{row.anno}{dataframe of annotations for each pathway.  # Not implemented yet}
 }
 \value{
 invisibly the data matrix and p value matrix used to make the heatmap (as a list)

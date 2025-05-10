@@ -4,7 +4,7 @@
 \alias{select_term}
 \title{Select Term}
 \usage{
-select_term(out, terms, verbose = FALSE, prioritize.signaling = TRUE)
+select_term(out, terms, verbose = FALSE, path_scores = NULL)
 }
 \arguments{
 \item{out}{a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea}
@@ -13,7 +13,7 @@ select_term(out, terms, verbose = FALSE, prioritize.signaling = TRUE)
 
 \item{verbose}{boolean, whether to print data table used as the basis for selecting the term.}
 
-\item{prioritize.signaling}{a boolean, indicating whether pathways recieve a bonus for being signalling pathways}
+\item{path_scores}{a dataframe containing the columns: "pathway", "Score", "FDR". This is used primarily used as part of condensed_terms_multi, to prioritize pathways first by the Score, then in the case of tied Scores by FDR.}
 }
 \value{
 The name of one pathway to represent the group.

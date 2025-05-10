@@ -34,5 +34,6 @@ example_celltype_pseudobulks <- generate_synthetic_pseudobulks()
 conditions <- sapply(strsplit(colnames(example_celltype_pseudobulks), "[_-]"),function(x){x[[2]]})
 names(conditions) <- colnames(example_celltype_pseudobulks)
 design <- model.matrix(~conditions)
-de <- compute_cell_type_specific_DE(example_celltype_pseudobulks, design)
+de <- compute_cell_type_specific_DE(example_celltype_pseudobulks, design, de_method="deseq2")
+de <- compute_cell_type_specific_DE(example_celltype_pseudobulks, design, de_method="edger")
 }

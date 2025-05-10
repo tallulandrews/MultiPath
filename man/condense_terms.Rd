@@ -4,12 +4,7 @@
 \alias{condense_terms}
 \title{Condense Terms}
 \usage{
-condense_terms(
-  out,
-  equivalent = 0.5,
-  verbose = FALSE,
-  prioritize.signaling = TRUE
-)
+condense_terms(out, equivalent = 0.5, verbose = FALSE, path_scores = NULL)
 }
 \arguments{
 \item{out}{a set of pathway enrichments for a single DE test obtained from do_ora or do_fgsea}
@@ -18,7 +13,7 @@ condense_terms(
 
 \item{verbose}{boolean, whether to print data table used as the basis for selecting representative terms.}
 
-\item{prioritize.signaling}{a boolean, indicating whether pathways recieve a bonus for being signalling pathways}
+\item{path_scores}{a dataframe containing the columns: "pathway", "Score", "FDR". This is used primarily used as part of condensed_terms_multi, to prioritize pathways first by the Score, then in the case of tied Scores by FDR.}
 }
 \value{
 The same structured data like the output from do_ora or do_fgse but with synonmyous termscondensed into a single pathway
