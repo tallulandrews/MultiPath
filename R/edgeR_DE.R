@@ -180,10 +180,10 @@ one_cell_type_DE_deseq2 <- function(dat, design, fdr=0.05) {
                               colData = coldata,
                               design=design)
 	dds <- DESeq2::DESeq(dds)
-	coeffs <- resultsNames(dds) # lists the coefficients
+	coeffs <- DESeq2::resultsNames(dds) # lists the coefficients
 	
 	for (i in 2:(length(coeffs))) {
-		res <- results(dds, name=coeffs[i])
+		res <- DESeq2::results(dds, name=coeffs[i])
 		# Reformat to look like edgeR results
 		de <- res[,c(2,1,4,5,6)]
 		colnames(de) <- c("logFC", "baseMean", "stat", "PValue", "FDR")
