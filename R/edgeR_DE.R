@@ -22,28 +22,31 @@
 compute_cell_type_specific_DE <- function(pseudobulks, design_matrix, fdr=0.05, de_method=c("deseq2", "edger")) {
 	rownames(design_matrix) <- colnames(pseudobulks)
 	sample <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[2]]}) # correct order
-	cell_type <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[1]]}) # correct order
+	cell.types <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[1]]}) # correct order
 	all_outs <- list()
-	if (is.null(cell_types)) {
-		cell.types <-  unique(cell_type)
-	}
 	for (type in cell.types) {
 		print(type)
-		if (sum(cell_type==type) < 2) {
+		if (sum(cell.types==type) < 2) {
 			warning(paste("Warning: DE for", type, "could not be computed because fewer than 2 samples contain this type."))
 			next;
 		}
-		dat <- pseudobulks[,cell_type==type]
+		dat <- pseudobulks[,cell.types==type]
 		# Create the design matrix for this cell-type
 		design <- design_matrix[rownames(design_matrix) %in% colnames(dat),]
+		# check sufficient samples in each group.
+		tmp <- apply(design,2,function(x){length(unique(x))})
+		if (min(tmp[-1]) < 2) {
+			warning(paste("Warning: DE for", type, "could not be computed because fewer than 2 samples for each condition."))
+			next;
+		}
 		if (Matrix::rankMatrix(design)[1] < ncol(design)) {
 			warning(paste("Warning: DE for", type, "could not be computed because the predictors are dependent."))
 			next;
 		}
 		if(de_method[1] == "deseq2") {
-			all_outs[[type]] <- one_cell_type_DE_edgeR(dat, design, fdr=fdr)
-		} else if (de_method[1] == "edger") {
 			all_outs[[type]] <- one_cell_type_DE_deseq2(dat, design, fdr=fdr)
+		} else if (de_method[1] == "edger") {
+			all_outs[[type]] <- one_cell_type_DE_edgeR(dat, design, fdr=fdr)
 		} else {
 			print("Error: unrecognized DE method")
 		}
