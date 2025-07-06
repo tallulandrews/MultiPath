@@ -25,7 +25,8 @@ Removes synonymous pathways from a set of output pathway enrichments
 First calculates overlaps using 'get_overlaps' then identifies groups of synonymous pathways using 'cluster_overlaps' then selects the best representative term for each group using 'select_term'.
 }
 \examples{
-paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#paths <- convert_GSEAObj_to_list(get_pathways("test"))
+paths <- test_paths;print("4")
 rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 rich <- condense_terms(rich)
 }

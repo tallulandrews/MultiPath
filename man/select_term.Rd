@@ -26,9 +26,11 @@ Given a set of synonymous pathways, this function selects one pathway to represe
 These ranks are summed and the best scoring pathway is selected.
 }
 \examples{
-paths <- convert_GSEAObj_to_list(get_pathways("test"))
-rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
-overlaps <- get_overlaps(rich)
+#paths <- convert_GSEAObj_to_list(get_pathways("test"))
+paths <- test_paths;print("3")
+rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)));
+overlaps <- get_overlaps(rich);
 pathway_groups <- cluster_overlaps(overlaps)
-chosen1 <- select_term(rich, rich$pathway[pathway_groups == "1"])
+chosen1 <- select_term(rich, rich$results[pathway_groups == "1","pathway"])
+chosen2 <- select_term(rich, rich$results[,"pathway"])
 }

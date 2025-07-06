@@ -1,18 +1,19 @@
 Package: MultiPath
-Version: 0.01.2
+Version: 0.02.2
 Date: 2023-05-28
 Title: Multi-experiment pathway analysis and visualization
 Author: Tallulah Andrews <tallulandrews@gmail.com>
 Maintainer: Tallulah Andrews <tallulandrews@gmail.com>
 Depends: R (>= 4.1.2), knitr
-Imports: pheatmap, Matrix, msigdb, fgsea, Rcpp, edgeR, foreach, stats
+Imports: pheatmap, Matrix, msigdb, fgsea, Rcpp, edgeR, stats, GO.db, DESeq2, AnnotationDbi, org.Hs.eg.db
 Suggests: 
     rmarkdown
 LinkingTo: Rcpp
 VignetteBuilder: knitr
 biocViews: RNASeq, Sequencing, Transcriptomics, GeneExpression, Software, DifferentialExpression, DimensionReduction, FeatureExtraction
 Description: Calculates differentially expressed genes, and pathway enrichments for multiple cell-types in parallel then visualizes results across cell-types as a heatmap.
+LazyData: true
 URL: https://github.com/tallulandrews/MultiPath
 BugReports: https://github.com/tallulandrews/MultiPath/issues
 License: GPL (>=2)
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2

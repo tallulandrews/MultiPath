@@ -24,7 +24,8 @@ Overlaps are calculated as the length of the intersection divided by the total g
 "Union" = number of genes in the union of the two pathways.
 }
 \examples{
-paths <- convert_GSEAObj_to_list(get_pathways("test"))
-rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#paths <- convert_GSEAObj_to_list(get_pathways("test"))
+paths <- test_paths;print("1")
+rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)));
 overlaps <- get_overlaps(rich)
 }

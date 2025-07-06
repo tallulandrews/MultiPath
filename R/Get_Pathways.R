@@ -14,9 +14,9 @@
 #' @param include.celltype whether to include cell-type marker genesets.
 #' @return GeneSetCollection object of pathways.
 #' @examples
-#' genesets <- get_pathways("mouse")
-#' genesets <- get_pathways("human")
-#' @notes
+#' #genesets <- get_pathways("mouse")
+#' #genesets <- get_pathways("human")
+#' @note
 #' requires dbplyr version 3.2.4 or earlier
 #' @export
 get_pathways <- function(species=c("mouse", "human"), include.celltype=FALSE) {

@@ -44,7 +44,8 @@ Typically a query gene set will be a group of up or down regulated genes obtaine
 ORA is performed with a hypergeometric test against a specified background and applies a FDR multiple testing correction, after filtering provided pathways for terms with a reasonable number of genes attributed to it.
 }
 \examples{
-paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#paths <- convert_GSEAObj_to_list(get_pathways("test"))
+paths <- test_paths
 l2fc <- rnorm(100, sd=2)
 names(l2fc) <- sample(unlist(paths), size=100)
 rich <- do_gsea(l2fc, paths, nperm=50) # nperm should be a minimum of 50000 for reproducible results

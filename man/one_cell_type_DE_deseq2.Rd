@@ -30,5 +30,6 @@ names(conditions) <- colnames(example_celltype_pseudobulks)
 conditions <- conditions[cell_type == cell_type[1]]
 dat <- example_celltype_pseudobulks[,cell_type == cell_type[1]]
 design <- model.matrix(~conditions)
+rownames(design) <- names(conditions)
 de <- one_cell_type_DE_deseq2(dat, design)
 }

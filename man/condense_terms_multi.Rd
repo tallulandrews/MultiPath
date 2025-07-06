@@ -4,14 +4,14 @@
 \alias{condense_terms_multi}
 \title{Condense Terms Multi}
 \usage{
-condense_terms_multi(out_list, equivalient = 0.5, verbose = FALSE)
+condense_terms_multi(out_list, equivalent = 0.5, verbose = FALSE)
 }
 \arguments{
 \item{out_list}{a list of pathway enrichments for multiple DE tests obtained from do_ora or do_fgsea}
 
-\item{verbose}{boolean, whether to print data table used as the basis for selecting representative terms.}
-
 \item{equivalent}{a scalar value for the equivalence threshold. (see: \code{get_overlaps})}
+
+\item{verbose}{boolean, whether to print data table used as the basis for selecting representative terms.}
 }
 \value{
 The same structured list of pathway enrichments but with redundant terms removed.
@@ -29,7 +29,8 @@ See: \code{cluster_overlaps} for details of pathway clustering.
 See: \code{get_oberlaps} for deatils of overlap calculation.
 }
 \examples{
-paths <- convert_GSEAObj_to_list(get_pathways("test"))
-rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#paths <- convert_GSEAObj_to_list(get_pathways("test"))
+paths <- test_paths;print("5")
+rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)));
 rich <- condense_terms(rich)
 }

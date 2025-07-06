@@ -88,7 +88,7 @@ do_gsea <- function(scored_genes, pathways, fdr=0.05, min.term.size=15, max.term
 #' @examples
 #' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
 #' paths <- test_paths
-#' rich <- do_ra(paths[[1]], paths, background=unique(unlist(paths)))
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 #' dim(rich$results)[1] == length(rich$contrib) # TRUE
 #' @export
 do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, max.term.size=1000, include.underrepresented=FALSE){
@@ -156,8 +156,8 @@ do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, 
 #' @return A matrix of overlap scores for all pairs of pathways.
 #' @examples
 #' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
-#' paths <- test_paths
-#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#' paths <- test_paths;print("1")
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)));
 #' overlaps <- get_overlaps(rich)
 #' @export
 get_overlaps <- function(out, denom=c("max", "min", "union")) {
@@ -199,9 +199,9 @@ get_overlaps <- function(out, denom=c("max", "min", "union")) {
 #' @return A vector of group IDs for each pathway.
 #' @examples
 #' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
-#' paths <- test_paths
-#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
-#' overlaps <- get_overlaps(rich)
+#' paths <- test_paths;print("2")
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)));
+#' overlaps <- get_overlaps(rich);
 #' pathway_groups <- cluster_overlaps(overlaps)
 #' @export
 cluster_overlaps <- function(overlaps, equivalent=0.5, plot.result=TRUE) {
@@ -231,9 +231,9 @@ cluster_overlaps <- function(overlaps, equivalent=0.5, plot.result=TRUE) {
 #' @return The name of one pathway to represent the group.
 #' @examples
 #' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
-#' paths <- test_paths
-#' rich <- do_ora(paths[[1]], paths, background=c(unique(unlist(paths)))
-#' overlaps <- get_overlaps(rich)
+#' paths <- test_paths;print("3")
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)));
+#' overlaps <- get_overlaps(rich);
 #' pathway_groups <- cluster_overlaps(overlaps)
 #' chosen1 <- select_term(rich, rich$results[pathway_groups == "1","pathway"])
 #' chosen2 <- select_term(rich, rich$results[,"pathway"])
@@ -297,7 +297,7 @@ select_term <- function(out, terms, verbose=FALSE, path_scores=NULL) {
 #' @return The same structured data like the output from do_ora or do_fgse but with synonmyous termscondensed into a single pathway
 #' @examples
 #' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
-#' paths <- test_paths
+#' paths <- test_paths;print("4")
 #' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 #' rich <- condense_terms(rich)
 #' @export
@@ -346,8 +346,8 @@ condense_terms <- function(out, equivalent=0.5, verbose=FALSE, path_scores=NULL)
 #' @return The same structured list of pathway enrichments but with redundant terms removed.
 #' @examples
 #' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
-#' paths <- test_paths
-#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#' paths <- test_paths;print("5")
+#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)));
 #' rich <- condense_terms(rich)
 #' @export
 
@@ -457,7 +457,7 @@ obsolete_condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 #' @return pathway enrichments provided in the "out" argument with an additional column in the results that includes the trimmed pathway name.
 #' @examples
 #' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
-#' paths <- test_paths
+#' paths <- test_paths; print("6")
 #' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 #' rich <- condense_terms(rich)
 #' rich <- trim_pathway_names(rich)

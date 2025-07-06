@@ -47,7 +47,8 @@ adpated from: https://jokergoo.github.io/2023/04/05/speed-up-over-representation
 by: Zuguang Gu
 }
 \examples{
-paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#paths <- convert_GSEAObj_to_list(get_pathways("test"))
+paths <- test_paths
 rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 dim(rich$results)[1] == length(rich$contrib) # TRUE
 }

@@ -167,11 +167,11 @@ group_rowmeans <- function(MAT, group_labs, type=c("mean","sum", "var")) {
 			}
 			return(out)
 		} else {
-			error("Error: group labels do not match the provided matrix")
+			stop("Error: group labels do not match the provided matrix")
 		}
 	}
 	if (length(group_labs) != ncol(MAT)) {
-		error("Error: group labels do not match the provided matrix")
+		stop("Error: group labels do not match the provided matrix")
 	}
         d <- split(seq(ncol(MAT)), group_labs);
 	if (type[1] == "mean") {
@@ -235,7 +235,7 @@ group_colmeans <- function(MAT, group_labs, type=c("mean", "sum", "var")) {
 			}
 			return(out)
 		} else {
-			error("Error: group labels do not match the provided matrix")
+			stop("Error: group labels do not match the provided matrix")
 		}
 	}
         d <- split(seq(nrow(MAT)), group_labs);

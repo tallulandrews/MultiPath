@@ -23,8 +23,9 @@ Clusters pathways based on overlapping contributing genes.
 Uses single-linkage hierarchical clustering(`hclust`) to group pathway terms based on overlapping contributing genes.
 }
 \examples{
-paths <- convert_GSEAObj_to_list(get_pathways("test"))
-rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
-overlaps <- get_overlaps(rich)
+#paths <- convert_GSEAObj_to_list(get_pathways("test"))
+paths <- test_paths;print("2")
+rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)));
+overlaps <- get_overlaps(rich);
 pathway_groups <- cluster_overlaps(overlaps)
 }

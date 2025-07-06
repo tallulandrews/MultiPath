@@ -26,7 +26,8 @@ Removes a prefix and truncates the pathway names to a specified maximum number o
 This improves plot appearance when very long pathways are selected.
 }
 \examples{
-paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#paths <- convert_GSEAObj_to_list(get_pathways("test"))
+paths <- test_paths; print("6")
 rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 rich <- condense_terms(rich)
 rich <- trim_pathway_names(rich)

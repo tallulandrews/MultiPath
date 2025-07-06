@@ -20,7 +20,10 @@ Downloads common pathways from msigdb for either human or mouse.
 \details{
 Downloads MSigDB Hallmark pathways, GO biological processes, Reactome and Biocarta pathways from `msigdb` for either human or mouse. For human it also adds the KEGG pathways. Optionally also downloads cell-type marker genesets.
 }
+\note{
+requires dbplyr version 3.2.4 or earlier
+}
 \examples{
-genesets <- get_pathways("mouse")
-genesets <- get_pathways("human")
+#genesets <- get_pathways("mouse")
+#genesets <- get_pathways("human")
 }
