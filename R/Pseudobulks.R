@@ -159,11 +159,11 @@ group_rowmeans <- function(MAT, group_labs, type=c("mean","sum", "var")) {
 		if (length(MAT) == length(group_labs)) {
 			d <- split(seq(length(MAT)), group_labs)
 			if (type[1] == "mean") {
-				out <- sapply(d, function(group) {mean(MAT[,group])})
+				out <- sapply(d, function(group) {mean(MAT[group])})
 			} else if (type[1] == "sum") {
-				out <- sapply(d, function(group) {sum(MAT[,group])})
+				out <- sapply(d, function(group) {sum(MAT[group])})
 			} else if (type[1] == "var") {
-				out <- sapply(d, function(group) {var(MAT[,group])})
+				out <- sapply(d, function(group) {var(MAT[group])})
 			}
 			return(out)
 		} else {
@@ -227,11 +227,11 @@ group_colmeans <- function(MAT, group_labs, type=c("mean", "sum", "var")) {
 		if (length(MAT) == length(group_labs)) {
 			d <- split(seq(length(MAT)), group_labs)
 			if (type[1] == "mean") {
-				out <- sapply(d, function(group) {mean(MAT[,group])})
+				out <- sapply(d, function(group) {mean(MAT[group])})
 			} else if (type[1] == "sum") {
-				out <- sapply(d, function(group) {sum(MAT[,group])})
+				out <- sapply(d, function(group) {sum(MAT[group])})
 			} else if (type[1] == "var") {
-				out <- sapply(d, function(group) {var(MAT[,group])})
+				out <- sapply(d, function(group) {var(MAT[group])})
 			}
 			return(out)
 		} else {

@@ -16,6 +16,7 @@
 #' conditions <- sapply(strsplit(colnames(example_celltype_pseudobulks), "[_-]"),function(x){x[[2]]})
 #' names(conditions) <- colnames(example_celltype_pseudobulks)
 #' design <- model.matrix(~conditions)
+#' rownames(design) <- names(conditions)
 #' de <- compute_cell_type_specific_DE(example_celltype_pseudobulks, design, de_method="deseq2")
 #' de <- compute_cell_type_specific_DE(example_celltype_pseudobulks, design, de_method="edger")
 #' @export
@@ -54,52 +55,6 @@ compute_cell_type_specific_DE <- function(pseudobulks, design_matrix, fdr=0.05, 
 	return(all_outs)
 }
 
-#' Cell-type specific DE - parallel
-#'
-#' @description
-#' Calculated differential expression for each cell-type given an appropriate design matrix
-#'
-#' @details
-#' Uses edgeR (QLR test) or DESeq2 to calculate differential expression for each coefficient in the design matrix for each cell-type. Results are filtered based on the provided FDR threshold. Performs differential expression for each cell-type in parallel to speed up computations. See: one_cell_type_DE_edgeR and one_cell_type_DE_deseq2 for details.
-#' 
-#' @param pseudobulks a pseudobulk matrix created from get_pseudobulks
-#' @param design_matrix a design matrix created with model.matrix
-#' @param fdr False discovery rate threshold used to filter DE genes
-#' @param n.cores Number of CPUs to use for parallel computing
-#' @param de_method Which pseudobulk DE method to use (deseq2 or edger).
-#' @return a list of dataframes containing DE results for each cell-type
-#' @examples
-#' example_celltype_pseudobulks <- generate_synthetic_pseudobulks()
-#' conditions <- sapply(strsplit(colnames(example_celltype_pseudobulks), "[_-]"),function(x){x[[2]]})
-#' names(conditions) <- colnames(example_celltype_pseudobulks)
-#' design <- model.matrix(~conditions)
-#' de <- compute_cell_type_specific_DE_parallel(example_celltype_pseudobulks, design, de_method="deseq2")
-#' de <- compute_cell_type_specific_DE_parallel(example_celltype_pseudobulks, design, de_method="edger")
-#' @export
-compute_cell_type_specific_DE_parallel <- function(pseudobulks, design_matrix, fdr=0.05, n.cores=1, de_method=c("deseq2", "edger")) {
-	sample <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[1]]})
-	cell_type <- sapply(strsplit(colnames(pseudobulks), "_"), function(x){x[[2]]})
-	all_outs <- foreach::foreach( type=cell_type) %do% {
-		dat <- pseudobulks[,cell_type==type]
-		# Create the design matrix for this cell-type
-		design <- design_matrix[rownames(design_matrix) %in% colnames(dat),]
-		if (Matrix::rankMatrix(design)[1] < ncol(design)) {
-			warning(paste("Warning: DE for", type, "could not be computed because the predictors are dependent - design matrix is not full rank."))
-		} else {
-			if(de_method[1] == "deseq2") {
-				list(type=type, de=one_cell_type_DE_edgeR(dat, design, fdr=fdr))
-			} else if (de_method[1] == "edger") {
-				list(type=type, de=one_cell_type_DE_deseq2(dat, design, fdr=fdr))
-			} else {
-				print("Error: unrecognized DE method")
-			}
-		}
-	}
-	type_names <- sapply(all_outs, function(x){x$type})
-	all_outs <- lapply(all_outs, function(x){x$de})
-	names(all_outs) <- type_names;
-	return(all_outs)
-}
 
 #' Cell-type specific DE - one cell-type (edgeR)
 #'
@@ -122,6 +77,7 @@ compute_cell_type_specific_DE_parallel <- function(pseudobulks, design_matrix, f
 #' conditions <- conditions[cell_type == cell_type[1]]
 #' dat <- example_celltype_pseudobulks[,cell_type == cell_type[1]]
 #' design <- model.matrix(~conditions)
+#' rownames(design) <- names(conditions)
 #' de <- one_cell_type_DE_edgeR(dat, design)
 #' @export
 one_cell_type_DE_edgeR <- function(dat, design, fdr=0.05) {
@@ -167,6 +123,7 @@ one_cell_type_DE_edgeR <- function(dat, design, fdr=0.05) {
 #' conditions <- conditions[cell_type == cell_type[1]]
 #' dat <- example_celltype_pseudobulks[,cell_type == cell_type[1]]
 #' design <- model.matrix(~conditions)
+#' rownames(design) <- names(conditions)
 #' de <- one_cell_type_DE_deseq2(dat, design)
 #' @export
 one_cell_type_DE_deseq2 <- function(dat, design, fdr=0.05) {

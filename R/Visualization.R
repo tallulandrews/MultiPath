@@ -173,7 +173,7 @@ generate_heatmap_data <- function(list_of_rich, pathways) {
 #' heat_data <- matrix(rnorm(100), ncol=10)
 #' rownames(heat_data) <- paste("pathway", 1:nrow(heat_data), sep="")
 #' colnames(heat_data) <- paste("celltype", 1:ncol(heat_data), sep="")
-#' pvals=exp(-abs(rnorm(100,mean=5, sd=10)))
+#' pvals=matrix(exp(-abs(rnorm(100,mean=5, sd=10))),ncol=10)
 #' plot_heatmap(heat_data, stars=FALSE)
 #' plot_heatmap(heat_data, pvals=pvals, stars=TRUE)
 #' @export
