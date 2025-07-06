@@ -222,6 +222,22 @@ group_rowmeans <- function(MAT, group_labs, type=c("mean","sum", "var")) {
 #' group_colmeans(t(example_data$counts)[,1], example_data$donor, type="var") # data with 1 column
 #' @export
 group_colmeans <- function(MAT, group_labs, type=c("mean", "sum", "var")) {
+	if (is.null(ncol(MAT))) {
+		print("MAT is a vector not a matrix, returned value will also be a vector.")
+		if (length(MAT) == length(group_labs)) {
+			d <- split(seq(length(MAT)), group_labs)
+			if (type[1] == "mean") {
+				out <- sapply(d, function(group) {mean(MAT[,group])})
+			} else if (type[1] == "sum") {
+				out <- sapply(d, function(group) {sum(MAT[,group])})
+			} else if (type[1] == "var") {
+				out <- sapply(d, function(group) {var(MAT[,group])})
+			}
+			return(out)
+		} else {
+			error("Error: group labels do not match the provided matrix")
+		}
+	}
         d <- split(seq(nrow(MAT)), group_labs);
 	if (type[1] == "mean") {
 		if(ncol(MAT) > 1) {
