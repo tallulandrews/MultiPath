@@ -1,3 +1,17 @@
+#' Teat Pathways
+#'
+#' @description MSigDb Hallmark pathways
+#'
+#' @format a list of 50 pathways:
+#' \describe{
+#'    \item{item name}{name of the pathway}
+#'    \item{value}{vector of human gene IDs}
+#'  }
+#'
+#' @source {msigdb} Bioconductor database package containing MSigDB pathways.
+"test_paths"
+
+
 #' GeneSet Enrichment Analysis
 #'
 #' @description
@@ -19,7 +33,8 @@
 #' results = a dataframe containing the pathway name, number of query genes in the pathway (intersection), log2foldenrichment, FDR
 #' contrib = a list of genes found in the intersection between this pathway and the query gene set. 
 #' @examples
-#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' paths <- test_paths
 #' l2fc <- rnorm(100, sd=2)
 #' names(l2fc) <- sample(unlist(paths), size=100)
 #' rich <- do_gsea(l2fc, paths, nperm=50) # nperm should be a minimum of 50000 for reproducible results
@@ -71,8 +86,9 @@ do_gsea <- function(scored_genes, pathways, fdr=0.05, min.term.size=15, max.term
 #' results = a dataframe containing the pathway name, number of query genes in the pathway (intersection), log2foldenrichment, FDR
 #' contrib = a list of genes found in the intersection between this pathway and the query gene set. 
 #' @examples
-#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
-#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' paths <- test_paths
+#' rich <- do_ra(paths[[1]], paths, background=unique(unlist(paths)))
 #' dim(rich$results)[1] == length(rich$contrib) # TRUE
 #' @export
 do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, max.term.size=1000, include.underrepresented=FALSE){
@@ -139,7 +155,8 @@ do_ora <- function(sig_genes, pathways, background, fdr=0.05, min.term.size=10, 
 #' @param denom one of "max", "min" or "avg" determining how the denominator is calculated (See: details)
 #' @return A matrix of overlap scores for all pairs of pathways.
 #' @examples
-#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' paths <- test_paths
 #' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 #' overlaps <- get_overlaps(rich)
 #' @export
@@ -181,7 +198,8 @@ get_overlaps <- function(out, denom=c("max", "min", "union")) {
 #' @param plot.result a boolean determining whether to plot a heatmaps of the overlaps showing he pathway groups.
 #' @return A vector of group IDs for each pathway.
 #' @examples
-#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' paths <- test_paths
 #' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 #' overlaps <- get_overlaps(rich)
 #' pathway_groups <- cluster_overlaps(overlaps)
@@ -212,11 +230,13 @@ cluster_overlaps <- function(overlaps, equivalent=0.5, plot.result=TRUE) {
 #' @param verbose boolean, whether to print data table used as the basis for selecting the term.
 #' @return The name of one pathway to represent the group.
 #' @examples
-#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
-#' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
+#' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' paths <- test_paths
+#' rich <- do_ora(paths[[1]], paths, background=c(unique(unlist(paths)))
 #' overlaps <- get_overlaps(rich)
 #' pathway_groups <- cluster_overlaps(overlaps)
-#' chosen1 <- select_term(rich, rich$pathway[pathway_groups == "1"])
+#' chosen1 <- select_term(rich, rich$results[pathway_groups == "1","pathway"])
+#' chosen2 <- select_term(rich, rich$results[,"pathway"])
 #' @export
 select_term <- function(out, terms, verbose=FALSE, path_scores=NULL) {
 	#term_length <- sapply(strsplit(terms, "[ _]"), length)
@@ -276,7 +296,8 @@ select_term <- function(out, terms, verbose=FALSE, path_scores=NULL) {
 #' @param path_scores a dataframe containing the columns: "pathway", "Score", "FDR". This is used primarily used as part of condensed_terms_multi, to prioritize pathways first by the Score, then in the case of tied Scores by FDR.  
 #' @return The same structured data like the output from do_ora or do_fgse but with synonmyous termscondensed into a single pathway
 #' @examples
-#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' paths <- test_paths
 #' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 #' rich <- condense_terms(rich)
 #' @export
@@ -324,7 +345,8 @@ condense_terms <- function(out, equivalent=0.5, verbose=FALSE, path_scores=NULL)
 #' @param verbose boolean, whether to print data table used as the basis for selecting representative terms.
 #' @return The same structured list of pathway enrichments but with redundant terms removed.
 #' @examples
-#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' paths <- test_paths
 #' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 #' rich <- condense_terms(rich)
 #' @export
@@ -332,13 +354,13 @@ condense_terms <- function(out, equivalent=0.5, verbose=FALSE, path_scores=NULL)
 # select one representative for each group of overlapping terms
 # This is super memory inefficient
 # Use Rowan Canario's New Approach Instead
-condense_terms_multi <- function(out_list, equivalient=0.5, verbose=FALSE) {
+condense_terms_multi <- function(out_list, equivalent=0.5, verbose=FALSE) {
 
 	# Calculate frequency and average FDR for each pathway across all tests
 	all_pathways <- lapply(out_list, function(x) x[["results"]][,"pathway"])
 	pathway_freq <- table(unlist(all_pathways))
 	all_FDRs <- lapply(out_list, function(x) x[["results"]][,"FDR"])
-	avg_FDRs <- aggregate(unlist(all_FDRs), by=list(unlist(all_pathways)), mean)
+	avg_FDRs <- stats::aggregate(unlist(all_FDRs), by=list(unlist(all_pathways)), mean)
 	if (!identical(avg_FDRs[,1], names(pathway_freq))) {
 		stop("Error: FDRs do not match Freqs in condense_terms_multi")
 	}
@@ -434,7 +456,8 @@ obsolete_condense_terms_multi <- function(out, equivalent=0.5, verbose=FALSE) {
 #' @param split_char the regular expression to use to split the pathway name into individual words
 #' @return pathway enrichments provided in the "out" argument with an additional column in the results that includes the trimmed pathway name.
 #' @examples
-#' paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' #paths <- convert_GSEAObj_to_list(get_pathways("test"))
+#' paths <- test_paths
 #' rich <- do_ora(paths[[1]], paths, background=unique(unlist(paths)))
 #' rich <- condense_terms(rich)
 #' rich <- trim_pathway_names(rich)
